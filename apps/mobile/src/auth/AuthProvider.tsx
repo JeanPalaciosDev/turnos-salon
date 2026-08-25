@@ -117,7 +117,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         return;
       }
 
-      await prepareLocalDatabaseForUser(nextSession.user.id);
+      await prepareLocalDatabaseForUser(profile);
 
       if (currentVersion !== resolutionVersion.current) {
         return;
@@ -209,7 +209,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const syncNow = useCallback(async (): Promise<void> => {
-    if (!authState.session || !authState.profile) {
+    const session = authState.session;
+    const profile = authState.profile;
+
+    if (!session || !profile) {
       return;
     }
 
@@ -223,9 +226,34 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSyncErrorMessage(null);
 
     try {
+      const refreshedProfile = await fetchOwnProfile(session.user.id);
+
+      if (!refreshedProfile) {
+        throw new Error('La cuenta ya no pertenece a un negocio.');
+      }
+
+      await prepareLocalDatabaseForUser(refreshedProfile);
+
+      const scopeChanged =
+        refreshedProfile.id !== profile.id ||
+        refreshedProfile.business_id !== profile.business_id ||
+        refreshedProfile.role !== profile.role ||
+        (refreshedProfile.worker_id ?? null) !== (profile.worker_id ?? null);
+
+      if (scopeChanged) {
+        setAuthState((current) =>
+          current.session?.user.id === session.user.id
+            ? {
+                ...current,
+                profile: refreshedProfile,
+              }
+            : current
+        );
+      }
+
       await synchronizeWithServer({
         endpoint: syncEndpoint,
-        accessToken: authState.session.access_token,
+        accessToken: session.access_token,
       });
       setSyncStatus('synced');
     } catch (error) {
