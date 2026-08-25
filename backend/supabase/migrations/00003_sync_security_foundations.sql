@@ -74,9 +74,9 @@ ALTER TABLE public.workers
   );
 
 ALTER TABLE public.appointments
-  ADD CONSTRAINT appointments_date_format CHECK (date ~ '^\\d{4}-\\d{2}-\\d{2}$'),
-  ADD CONSTRAINT appointments_start_time_format CHECK (start_time ~ '^([01]\\d|2[0-3]):[0-5]\\d$'),
-  ADD CONSTRAINT appointments_end_time_format CHECK (end_time ~ '^([01]\\d|2[0-3]):[0-5]\\d$'),
+  ADD CONSTRAINT appointments_date_format CHECK (date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'),
+  ADD CONSTRAINT appointments_start_time_format CHECK (start_time ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),
+  ADD CONSTRAINT appointments_end_time_format CHECK (end_time ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),
   ADD CONSTRAINT appointments_time_order CHECK (start_time < end_time);
 
 ALTER TABLE public.payments

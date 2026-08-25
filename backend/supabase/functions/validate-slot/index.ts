@@ -1,54 +1,86 @@
-/**
- * Edge Function: Validate appointment slot uniqueness
- *
- * Called during sync push to verify that the new/updated appointment
- * doesn't overlap with existing appointments for the same worker.
- *
- * TODO: Implement full validation logic in Task 3
- */
+import {
+  HttpError,
+  corsHeaders,
+  createAuthenticatedClient,
+  databaseErrorResponse,
+  jsonResponse,
+} from '../_shared/supabase.ts';
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
-    });
+type SlotRequest = {
+  worker_id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  exclude_id: string | null;
+};
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function parseSlotRequest(value: unknown): SlotRequest {
+  if (!isObject(value)) {
+    throw new HttpError('Request body must be an object.', 400, 'INVALID_INPUT');
   }
 
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  const required = ['worker_id', 'date', 'start_time', 'end_time'] as const;
+  for (const field of required) {
+    if (typeof value[field] !== 'string' || value[field].trim().length === 0) {
+      throw new HttpError(`${field} is required.`, 400, 'INVALID_INPUT');
+    }
+  }
+
+  if (value.exclude_id !== undefined && value.exclude_id !== null && typeof value.exclude_id !== 'string') {
+    throw new HttpError('exclude_id must be a string or null.', 400, 'INVALID_INPUT');
+  }
+
+  return {
+    worker_id: value.worker_id,
+    date: value.date,
+    start_time: value.start_time,
+    end_time: value.end_time,
+    exclude_id: value.exclude_id ?? null,
+  };
+}
+
+Deno.serve(async (request) => {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (request.method !== 'POST') {
+    return jsonResponse({ error: 'Method not allowed.' }, 405);
   }
 
   try {
-    const body = await req.json();
-    const { worker_id, date, start_time, end_time, exclude_id } = body;
+    const payload = parseSlotRequest(await request.json());
+    const { supabase } = await createAuthenticatedClient(request);
+    const { data, error } = await supabase.rpc('validate_appointment_slot', {
+      p_worker_id: payload.worker_id,
+      p_date: payload.date,
+      p_start_time: payload.start_time,
+      p_end_time: payload.end_time,
+      p_exclude_id: payload.exclude_id,
+    });
 
-    // TODO: Query database for conflicts
-    // For now, always return valid
-    const response = {
-      valid: true,
-      conflicts: [],
-    };
+    if (error) {
+      return databaseErrorResponse(error);
+    }
 
-    return new Response(JSON.stringify(response), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+    return jsonResponse({
+      valid: data.length === 0,
+      conflicts: data,
     });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    if (error instanceof HttpError) {
+      return jsonResponse({ error: error.message, code: error.code }, error.status);
+    }
+
+    if (error instanceof SyntaxError) {
+      return jsonResponse({ error: 'Request body must be valid JSON.', code: 'INVALID_JSON' }, 400);
+    }
+
+    console.error('Unexpected slot validation failure.', error);
+    return jsonResponse({ error: 'Internal server error.', code: 'INTERNAL_ERROR' }, 500);
   }
 });

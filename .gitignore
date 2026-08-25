@@ -4,6 +4,7 @@ node_modules/
 # Build outputs
 dist/
 .turbo/
+*.tsbuildinfo
 
 # Expo
 apps/mobile/.expo/
@@ -12,6 +13,7 @@ apps/mobile/ios/
 
 # Supabase
 backend/supabase/.temp/
+backend/supabase/.branches/
 
 # Environment
 .env

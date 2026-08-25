@@ -1,292 +1,146 @@
-# Plan de Implementación — Gestor de Turnos/Citas
+# Plan de implementación — Gestor de Turnos/Citas
 
-## 1. Stack recomendado
+> **Estado actualizado: 2026-08-25.** Este documento combina la arquitectura objetivo con el avance real del repositorio. “Implementado” significa que existe código versionado; no presupone que una migración, Edge Function o flujo móvil haya sido verificado en ejecución.
 
-| Capa | Elección | Por qué | Alternativa descartada |
-|------|----------|---------|----------------------|
-| Framework móvil | **Expo (React Native)** | Comparte lógica TS con web futura, un solo dev no necesita código nativo. Expo SDK simplifica build/distribución. | Flutter — requiere Dart, duplica toda la lógica de negocio, imposibilita reutilización directa con web. |
-| Lenguaje | **TypeScript** | Dominio del dev, tipado estático para modelo de datos complejo, ecosistema compartido móvil/web. | — |
-| Base de datos local | **WatermelonDB** | Diseñada para offline-first en React Native, lazy loading, sincronización con backend vía pull/push, rendimiento en listas grandes de turnos. [verificar estado de mantenimiento 2024-25] | SQLite directo (expo-sqlite) — requiere escribir capa de sync desde cero. |
-| Motor de sincronización | **WatermelonDB Sync** (protocolo built-in) | Protocolo push/pull con timestamps, resolución de conflictos server-wins configurable, ya integrado con la DB local. | PowerSync [verificar pricing y límites free tier] — más maduro en sync pero agrega dependencia de servicio externo. |
-| Backend | **Supabase** (PostgreSQL + Auth + Edge Functions) | Postgres como fuente de verdad, auth integrado, edge functions para lógica de sync, un solo servicio que cubre DB remota + auth + API. Reduce superficie de mantenimiento. | Backend custom (Fastify + Prisma) — más control pero más infra que mantener solo. |
-| Base de datos remota | **PostgreSQL (via Supabase)** | Relacional, soporta bien el modelo de entidades con relaciones, jsonb para extensibilidad. | — |
-| Autenticación | **Supabase Auth** | Integrado con el backend elegido, soporta email/password y magic link, RLS para multi-tenancy futura. | Firebase Auth — agrega dependencia de Google sin necesidad. |
-| Gestión de estado | **Zustand + React Query (TanStack Query)** | Zustand para estado UI/local ligero, TanStack Query para cache de datos remotos y refetch post-sync. Mínimo boilerplate. | Redux Toolkit — overhead excesivo para un solo dev. |
-| Capa de UI | **Tamagui** | Comparte componentes entre React Native y web con estilos compilados, buen rendimiento. [verificar estabilidad con Expo SDK 52+] | NativeWind — solo estilos, no da componentes cross-platform listos. |
-| Testing | **Vitest (lógica core) + React Native Testing Library (UI)** | Vitest es rápido para el paquete de lógica pura TS. RNTL para tests de componentes. | Jest — más lento, Vitest comparte config con web futura. |
-| Build/Distribución | **EAS Build + EAS Submit** | Pipeline de Expo para compilar y publicar en stores sin CI propio. OTA updates con expo-updates. | Fastlane — requiere configuración manual por plataforma. |
+## 1. Estado real de implementación
 
-## 2. Arquitectura
+| Área | Estado | Evidencia / alcance actual |
+|---|---|---|
+| Monorepo | Parcialmente implementado | Turborepo, `@turnos/core`, `@turnos/models`, Expo y Supabase están creados. Core y models tienen build TypeScript; el build móvil y el de Supabase son placeholders de EAS/CLI. |
+| Dominio compartido | Implementado parcialmente | Tipos, validadores de servicios/clientes/trabajadores/solapamientos y permisos puros owner/worker en `packages/core`. Faltan cálculos de cobros, comisiones, dashboard y tests. |
+| Esquema remoto | Implementado en código | Migraciones `00001`–`00006`: tablas, RLS, `sync_version`, bootstrap del owner, completado de turnos, sync y slots. Falta confirmar el estado de una instancia Supabase concreta. |
+| WatermelonDB y SQLite | Implementado en código | Schema, modelos y adaptador SQLite configurados en `apps/mobile/src/database`; ServiceModel ya expone accesores tipados sobre los campos raw. |
+| Sync offline | Implementado en código | Cliente Watermelon pull/push, Edge Function `sync`, RPCs `sync_pull`/`sync_push`, cursor global y protección de solapamientos. Falta prueba end-to-end. |
+| Auth móvil y onboarding | Implementado en código | Email/password, sesión persistente en SecureStore, perfil/rol, bootstrap transaccional de owner, sincronización tras sesión y landing básica por rol. Requiere variables de entorno y Supabase operativo. |
+| ABM de servicios | Implementado en código | Owner lista, crea, edita, desactiva y reactiva servicios de forma local; el repositorio valida/normaliza y solicita sync. Falta probarlo contra Supabase real y con datos offline. |
+| UI de negocio restante | Pendiente | Faltan ABM de trabajadores/clientes, agenda, cobros, comisiones y dashboard. |
+| Calidad y release | Pendiente | No hay tests, E2E, build nativo validado ni configuración EAS. Los assets declarados por Expo todavía deben existir antes de un build nativo. |
 
-### Capas y estructura del monorepo
+## 2. Stack efectivo
 
-```
+| Capa | Elección actual | Estado |
+|---|---|---|
+| Framework móvil | Expo SDK 52 + React Native 0.76.9 + Expo Router | Configurado |
+| Lenguaje | TypeScript estricto | Configurado |
+| Base local | WatermelonDB 0.28 + SQLite adapter | Configurado en código |
+| Backend | Supabase: PostgreSQL, Auth, RLS y Edge Functions | Configurado en código |
+| Cliente auth | `@supabase/supabase-js` 2.112.4 | Integrado en móvil |
+| Persistencia de sesión | `expo-secure-store` 14.0.1 | Integrada en móvil |
+| Compatibilidad RN | `react-native-url-polyfill` 2.0.0 + `react-native-get-random-values` 1.11.0 | Integrada para Supabase y UUID v7 |
+| Estado de auth | React Context (`AuthProvider`) | Integrado; Zustand no está instalado |
+| Caché remota | WatermelonDB + sync explícito | React Query no está instalado |
+| UI | Componentes y `StyleSheet` nativos | Tamagui no está instalado; sigue siendo una opción futura, no una dependencia actual |
+| Testing | Vitest previsto para core | Aún no hay archivos de test |
+| Distribución | EAS Build previsto | No configurado ni verificado |
+
+## 3. Arquitectura actual
+
+```text
 packages/
-  core/          → Lógica de negocio pura TS (cálculos de salario, validaciones, reglas de moneda, permisos)
-  models/        → Esquemas WatermelonDB, tipos compartidos, migraciones
+  core/                      lógica de dominio, tipos y permisos puros
+  models/                    schema y modelos WatermelonDB
 apps/
-  mobile/        → Expo app, UI con Tamagui, consume core + models
-  web/ (futuro)  → React app, Tamagui web, consume core + models
+  mobile/
+    app/
+      (auth)/                sign-in y sign-up
+      (onboarding)/          alta inicial de business/owner
+      (app)/
+        home                 shell autenticado y estado de sync
+        services/            listado, alta y edición de servicios
+    src/
+      auth/                  sesión, perfil, bootstrap y UUID v7
+      database/              WatermelonDB, modelos locales y sync
+      services/              repositorio y formulario offline-first
+      lib/supabase.ts        cliente Supabase y SecureStore
 backend/
   supabase/
-    migrations/      → SQL para schema (CREATE TABLE, RLS policies)
+    migrations/              schema, RLS, RPCs y protocolo de sync
     functions/
-      sync/          → Edge Function TS: endpoint push/pull para WatermelonDB
-      validate-slot/ → Edge Function TS: valida unicidad de horario en conflictos
-    config.toml      → Config local de Supabase CLI
+      sync/                  Edge Function pull/push autenticada
+      validate-slot/         Edge Function de consulta de conflicto
 ```
 
-### Reutilización móvil/web
+### Flujo de autenticación actual
 
-El monorepo (Turborepo) expone `core` y `models` como paquetes internos. La app web futura importa directamente la lógica de dominio y solo reemplaza la capa de navegación y storage.
+1. La app lee `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY` desde `apps/mobile/.env.local`.
+2. `AuthProvider` restaura la sesión persistida en `expo-secure-store` y mantiene el refresh del token según el estado de la app.
+3. Sin sesión, Expo Router muestra `sign-in` o `sign-up` por email/password.
+4. Con sesión sin `user_profiles`, el usuario entra al onboarding. `bootstrap_owner_business` crea en una transacción `business_config` y el perfil owner; el email y el `auth.uid()` se toman en el servidor.
+5. Con perfil, la app prepara la base WatermelonDB para esa identidad y dispara un pull/push inicial contra `functions/v1/sync`.
+6. Al cerrar sesión, la UI pide confirmación explícita y borra la base local. Esto evita exponer datos de un salón a la siguiente cuenta en el mismo dispositivo; por ello se debe sincronizar antes de confirmar.
+
+### Configuración por entorno
+
+- Copiar `apps/mobile/.env.example` a `apps/mobile/.env.local` y cargar la URL/anon key de Supabase.
+- La app deriva el endpoint de sync como `<SUPABASE_URL>/functions/v1/sync`.
+- `127.0.0.1` sirve para simuladores configurados localmente, no para un teléfono físico: en ese caso se necesita una URL accesible desde el dispositivo o un proyecto alojado.
+- La **service role key nunca pertenece a la app móvil**. Solo la anon/publishable key se expone al cliente y RLS/RPCs aplican la autorización.
 
 ### Estrategia de sincronización offline
 
-- **Modelo:** Server-wins con last-write-wins por campo (no por registro completo). WatermelonDB Sync usa `updated_at` como vector de versión.
-- **IDs:** UUIDs v7 generados en cliente (timestamp-sortable, evita colisiones sin coordinación).
-- **Conflicto en mismo turno desde dos dispositivos:** El servidor compara `updated_at`; el cambio más reciente gana. Para el caso crítico (dos personas asignan el mismo horario a distinto cliente), el endpoint de sync valida unicidad de slot y rechaza el push del perdedor con error específico que el cliente muestra.
-- **Flujo:** Cliente acumula cambios locales → al recuperar red, push de cambios → servidor aplica y devuelve pull con cambios remotos → cliente mergea.
-- **Soft deletes:** Todos los registros usan `is_deleted` flag; nunca se borran físicamente para no romper sync.
+- **Modelo:** server-wins. PostgreSQL asigna `sync_version`, una versión monotónica global usada como cursor de pull; `updated_at` es metadato de auditoría.
+- **IDs:** UUID v7 generados en cliente para altas offline. El bootstrap y el ABM de servicios usan el mismo criterio.
+- **Flujo:** cambios locales → push autenticado → servidor aplica o rechaza → pull de registros posteriores al cursor → merge WatermelonDB.
+- **Buckets WatermelonDB:** las altas locales siguen viajando en `created`, que el RPC puede insertar. `sendCreatedAsUpdated` permanece activado solo para que el cliente aplique como creación las filas remotas que el servidor incremental devuelve en `updated` por no mantener historial por dispositivo.
+- **Conflicto crítico:** la base protege slots activos con una exclusión GiST y el protocolo de sync valida el intervalo de forma transaccional. El cliente todavía debe incorporar UX específica para resolver un rechazo de slot.
+- **Soft deletes:** services, workers, clients, appointments y payments usan `is_deleted`. La desactivación de un servicio usa `is_active=false` y preserva historial; no es un borrado lógico.
 
-### RBAC
+### RBAC: objetivo y estado efectivo
 
-- Tabla `user_profiles` con `role: 'owner' | 'worker'` y FK a `worker_id`
-- RLS policies: owner ve todo del negocio, worker solo appointments donde `worker_id` = su worker asignado
-- En cliente: Zustand store expone `currentUser.role`, la UI esconde/muestra funcionalidades
-- **Permisos worker:** solo ve su propia agenda y marca turnos como completados. No puede crear turnos, ni ver otros trabajadores, ni cobrar.
-- **Permisos owner:** acceso total a todas las funcionalidades.
+- `user_profiles` expresa `role: 'owner' | 'worker'` y opcionalmente `worker_id`.
+- Owner puede gestionar datos de su negocio y realizar push genérico de sync. El repositorio y las rutas de servicios vuelven a comprobar `canManageServices(profile)` antes de mutar localmente.
+- Worker solo recibe sus appointments y no puede hacer push genérico; la transición de completado está restringida a `complete_own_appointment`.
+- **Brecha a resolver:** las RLS actuales permiten que un worker lea perfiles y trabajadores de su negocio, y el pull inicial devuelve esas colecciones. Por lo tanto, el objetivo histórico de “no ver otros trabajadores” no está plenamente aplicado a nivel de datos. Antes de publicar se deben ajustar conjuntamente RLS y `sync_pull` si ese requisito se mantiene.
+- La UI actual diferencia owner/worker en el shell y protege el ABM de servicios; la navegación funcional restante llegará junto con agenda y ABM pendientes.
 
-## 3. Modelo de datos
+## 4. Modelo de datos
 
-```typescript
-// Montos siempre en enteros (centavos/unidad mínima) para evitar redondeo flotante
-type MoneyAmount = {
-  amount: number;        // entero, ej: 1500 = $15.00
-  currency: string;      // ISO 4217: "ARS", "USD"
-};
+Las entidades operativas son `BusinessConfig`, `UserProfile`, `Service`, `Worker`, `Client`, `Appointment` y `Payment`. Todas las entidades sincronizadas incluyen `updated_at` y `sync_version`; las operativas además usan `is_deleted` cuando aplica.
 
-type BusinessConfig = {
-  id: string;
-  name: string;
-  base_currency: string;
-  timezone: string;
-  updated_at: number;
-};
+Decisiones vigentes:
 
-type UserProfile = {
-  id: string;            // = Supabase auth.uid
-  business_id: string;
-  role: 'owner' | 'worker';
-  worker_id?: string;    // FK a Worker si role='worker'
-  email: string;
-  updated_at: number;
-};
-
-type Service = {
-  id: string;
-  business_id: string;
-  name: string;
-  duration_minutes: number;
-  default_price: MoneyAmount;
-  is_active: boolean;
-  updated_at: number;
-  is_deleted: boolean;
-};
-
-type Worker = {
-  id: string;
-  business_id: string;
-  name: string;
-  commission_type: 'percentage' | 'fixed_per_service';
-  commission_value: number;  // porcentaje (ej: 40) o monto fijo en centavos
-  commission_currency?: string; // solo si fixed_per_service
-  is_active: boolean;
-  updated_at: number;
-  is_deleted: boolean;
-};
-
-type Client = {
-  id: string;
-  business_id: string;
-  name: string;
-  phone?: string;
-  notes?: string;
-  updated_at: number;
-  is_deleted: boolean;
-};
-
-type Appointment = {
-  id: string;
-  business_id: string;
-  date: string;          // ISO 8601 date "2025-03-15"
-  start_time: string;    // "14:30"
-  end_time: string;      // "15:00"
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show';
-  service_id: string;
-  worker_id: string;
-  client_id: string;
-  notes?: string;
-  updated_at: number;
-  is_deleted: boolean;
-};
-
-// Un appointment puede tener múltiples pagos (ej: parte en efectivo, parte en transferencia)
-type Payment = {
-  id: string;
-  business_id: string;
-  appointment_id: string;
-  amount: MoneyAmount;
-  method: 'cash' | 'card' | 'transfer' | 'other';
-  // Tasa de cambio al momento del cobro si la moneda del pago difiere de la moneda base del negocio
-  exchange_rate?: number; // ej: 1 USD = 1200 ARS → 1200
-  exchange_base_currency?: string;
-  paid_at: number;       // timestamp
-  updated_at: number;
-  is_deleted: boolean;
-};
-```
-
-### Decisiones de multi-moneda
-
-Los montos se almacenan siempre en la moneda en que se cobró. El `exchange_rate` captura la tasa al momento exacto del pago. Los reportes de salario/comisión convierten todo a `base_currency` usando el `exchange_rate` guardado en cada Payment, nunca recalculando con tasa actual. Redondeo: truncar al entero tras multiplicar por rate (banker's rounding si se requiere precisión contable).
-
-### Comisiones
-
-Se calculan en `core/` sobre los Payments completados del período, aplicando `commission_type` del Worker. Si el pago está en moneda distinta a `base_currency`, se convierte primero con el `exchange_rate` del Payment.
-
-## 4. Decisiones críticas
-
-1. **WatermelonDB como DB local** — Acopla la estrategia de sync al protocolo de la librería. Si WatermelonDB pierde mantenimiento, migrar es costoso. Mitigación: la lógica de negocio vive en `core/` sin importar WatermelonDB.
-
-2. **Server-wins en conflictos** — Simplifica enormemente la sync pero puede perder escrituras del usuario. Aceptable porque el caso típico es pocos dispositivos por negocio; si escala a múltiples operadores simultáneos, hay que agregar merge por campo.
-
-3. **Montos como enteros en centavos** — Evita errores de punto flotante pero requiere disciplina en toda la capa de UI (dividir por 100 al mostrar, multiplicar al guardar). No cambiar después.
-
-4. **UUID v7 generado en cliente** — Permite crear registros offline sin coordinación. No se puede migrar a IDs secuenciales después sin romper sync.
-
-5. **Monorepo con paquete `core` separado** — Estructura la reutilización web futura desde día 1. El costo es configuración inicial de Turborepo, pero ahorra refactor masivo después.
+- Montos como enteros en unidad mínima para no usar flotantes. El formulario de servicios solicita precio en esa unidad y muestra el ejemplo `5000 = $50,00`.
+- `Payment` permite múltiples líneas por appointment y conserva tipo de cambio histórico.
+- Las comisiones se calcularán en `core` sobre pagos/turnos del período, convertidos a `base_currency` con el tipo de cambio guardado.
+- Un usuario pertenece a un único negocio según la RPC de bootstrap y el `user_profiles.id` único. La tabla `business_config` no tiene por sí sola una restricción singleton global.
 
 ## 5. Roadmap por fases
 
-| Fase | Entregable | Criterio de terminado |
-|------|-----------|----------------------|
-| **1 — MVP operativo con auth y sync** | Auth (owner + worker), ABM de servicios/trabajadores/clientes, agenda diaria con creación/edición/cancelación de turnos, sync multi-dispositivo, RBAC funcional. | Un salón real opera: owner agenda turnos, worker ve su agenda desde su celular, datos sincronizan entre dispositivos. |
-| **2 — Cobro y vista semanal** | Registro de pagos multi-método y multi-moneda por turno. Vista semanal de agenda. Filtrado por worker/cliente/servicio. | Se puede cobrar un turno en efectivo + transferencia, y ver la agenda filtrada por trabajador en vista semanal. |
-| **3 — Salarios y dashboard** | Cálculo de comisión por trabajador por período. Dashboard con métricas: turnos del día/semana/mes, ingresos totales, distribución por servicio. | El dueño del salón ve cuánto debe a cada trabajador en el mes y el resumen de ingresos semanal. |
-| **4 — Polish y stores** | UX offline robusta (indicadores, manejo de conflictos), testing E2E, performance, publicación en App Store y Google Play. | Build de producción instalado en devices reales. Flujo completo funcional. Publicado en stores. |
-| **5 — Web client (futuro)** | App React web consumiendo `core` + `models`, con Tamagui web. Funcionalidades de Fase 1-2 replicadas. | Se accede desde navegador desktop y se opera la agenda igual que en móvil. |
+| Fase | Entregable | Estado actual | Criterio de terminado |
+|---|---|---|---|
+| 1 — Fundaciones | Monorepo, core/models, Supabase, WatermelonDB y sync | Código base implementado; validación operativa pendiente | Build de paquetes, migraciones aplicadas y sync probado contra PostgreSQL local/hosted |
+| 1 — Auth | Sesión owner/worker, bootstrap y acceso protegido | Base owner-first implementada; falta invitar/provisionar workers y pruebas reales | Owner se registra, crea negocio, restaura sesión y sincroniza desde un dispositivo |
+| 1 — Operación | ABM de servicios/trabajadores/clientes y agenda diaria | Servicios implementado en código; el resto pendiente | Owner administra datos y agenda; worker ve su agenda con aislamiento verificado |
+| 2 | Cobros, vista semanal y filtros | Pendiente | Se registran pagos multi-método y se consulta agenda semanal |
+| 3 | Comisiones y dashboard | Pendiente | Owner calcula salarios y consulta métricas del negocio |
+| 4 | UX offline, E2E, performance y stores | Pendiente | Build de producción probado en dispositivos y flujo E2E verde |
+| 5 | Cliente web | Futuro | Operación equivalente de fases 1–2 en navegador |
 
-## 6. Decisiones de requerimientos resueltas
+## 6. Tasks concretas y siguiente orden
 
-- **Multi-tenancy:** Un solo negocio por instalación. `BusinessConfig` es singleton.
-- **Turnos recurrentes:** No. Solo turnos individuales creados manualmente.
-- **Quién opera:** Dueño (acceso total) + trabajadores con acceso limitado (solo su agenda, solo marcar completado).
-- **Acceso:** Cada persona desde su propio celular. Auth individual + sync multi-dispositivo desde fase 1.
-- **Comisiones:** Solo visibles para el dueño.
+1. **Task 1 — Scaffolding:** estructura base completada. Pendiente resolver assets Expo y verificar un build nativo; Tamagui no forma parte de la implementación actual.
+2. **Task 2 — Supabase:** schema, RLS, bootstrap y RPCs existen hasta la migración `00006`. Pendiente verificar una instancia actual con migraciones aplicadas y pruebas de RLS por rol.
+3. **Task 3 — WatermelonDB + sync:** schema, adapter, cliente, Edge Function, RPCs y validación de slots están implementados. Pendiente integración end-to-end: crear offline, push, pull y rechazo de solapamiento.
+4. **Task 4 — Auth móvil:** implementada la base email/password, SecureStore, onboarding owner y shell por rol. Pendiente validar contra Supabase real, contemplar confirmación de email de producción y diseñar una invitación segura de workers; nunca exponer service role en móvil.
+5. **Task 5 — ABM de servicios:** implementado en código. Incluye listado reactivo de servicios activos/inactivos, alta, edición, desactivación/reactivación, validación y sincronización solicitada tras cada mutación. Pendiente validar con Supabase real: owner vs worker, alta offline, push, pull en otro dispositivo, conflictos y persistencia tras reiniciar.
+6. **Task 6 — ABM de trabajadores:** siguiente módulo funcional. Requiere primero un flujo seguro de invitación/provisión de `auth.users`, vinculación de `worker_id` y RLS.
+7. **Task 7 — ABM de clientes:** búsqueda local, validación y sincronización.
+8. **Tasks 8–15 — Agenda, semanal, pagos, comisiones, dashboard, offline UX y stores:** pendientes.
 
-## 7. Task Breakdown detallado
+## 7. Validación requerida antes de declarar un MVP operativo
 
-### Task 1: Monorepo scaffolding + configuración base
+- Configurar variables de entorno móviles sin commitear secretos.
+- Arrancar/aplicar Supabase incluyendo migraciones `00001`–`00006`, y servir o desplegar las Edge Functions.
+- Probar sign-up, login, recuperación de sesión, bootstrap, sign-out y cambio de cuenta en un development build.
+- Probar el ABM de servicios: alta offline, reintento de sync, edición concurrente, desactivación/reactivación, pull en otro dispositivo y bloqueo de worker.
+- Probar sync offline/online, conflictos de horario, RLS owner/worker y borrado local de datos al salir.
+- Agregar pruebas de core para solapamientos, permisos y validadores ya existentes.
+- Ejecutar `expo-doctor`, revisar las vulnerabilidades transitivas y crear configuración/validación EAS antes de una release.
 
-- **Objetivo:** Crear estructura de monorepo con Turborepo, configurar packages/core, packages/models, apps/mobile (Expo), backend/supabase.
-- **Guía:** `npx create-turbo@latest`, agregar Expo app con `npx create-expo-app`, configurar tsconfig paths entre packages. Instalar Tamagui en mobile.
-- **Tests:** Verificar que `turbo build` compila todos los packages. Un componente Tamagui placeholder se renderiza en el simulador.
-- **Demo:** La app Expo arranca en simulador mostrando una pantalla "Hello" con un componente Tamagui estilizado.
+## 8. Riesgos conocidos
 
-### Task 2: Supabase setup + schema + auth + RLS
-
-- **Objetivo:** Configurar proyecto Supabase (local con CLI para dev), crear migraciones SQL con todas las tablas del modelo, configurar Auth y RLS policies para owner/worker.
-- **Guía:** `npx supabase init`, crear migraciones SQL para cada tabla. RLS: owner accede a todo donde `business_id` coincide, worker solo a appointments/services donde `worker_id` = su perfil. Edge function placeholder para sync.
-- **Tests:** Test con Supabase CLI local: crear user owner, crear user worker, verificar que queries respetan RLS (worker no ve appointments de otro worker).
-- **Demo:** Desde Supabase Studio local, se pueden crear registros y verificar que las policies filtran correctamente por rol.
-
-### Task 3: WatermelonDB setup + modelos locales + sync básico
-
-- **Objetivo:** Instalar WatermelonDB en la app mobile, definir schemas/modelos que reflejen las tablas de Postgres, implementar sync adapter que conecta con Edge Function de Supabase.
-- **Guía:** Definir schemas en `packages/models`, configurar WatermelonDB con SQLite adapter en Expo. Implementar Edge Function `sync` que recibe push (cambios locales) y devuelve pull (cambios remotos) siguiendo protocolo WatermelonDB Sync.
-- **Tests:** Test unitario: crear un appointment local, simular push al servidor, verificar que llega a Postgres. Pull: crear dato en Postgres, verificar que sync lo baja al cliente.
-- **Demo:** Crear un registro offline en la app, activar sync, verificar que aparece en Supabase Studio.
-
-### Task 4: Auth flow en mobile + role-based navigation
-
-- **Objetivo:** Implementar login/signup con Supabase Auth en la app. Tras login, detectar rol del usuario y mostrar navegación correspondiente (owner ve todo, worker ve solo su agenda).
-- **Guía:** Usar `@supabase/supabase-js` con AsyncStorage para sesión persistente. Zustand store con `currentUser`, `role`, `workerId`. Stack navigator condicional por rol.
-- **Tests:** Test: login como owner muestra tabs completos (agenda, clientes, servicios, trabajadores, cobros, dashboard). Login como worker muestra solo tab "Mi agenda".
-- **Demo:** Dos usuarios logueados en distintos simuladores ven interfaces diferentes según su rol.
-
-### Task 5: ABM de Servicios
-
-- **Objetivo:** CRUD completo de servicios (crear, listar, editar, desactivar) con persistencia offline en WatermelonDB y sync.
-- **Guía:** Pantallas en mobile: lista de servicios, formulario crear/editar. Validaciones en `core/` (nombre requerido, duración > 0, precio > 0). Operaciones sobre WatermelonDB, sync automático cuando hay red.
-- **Tests:** Vitest en core: validaciones. RNTL: renderizado de lista, formulario. Integration: crear servicio offline, sync, verificar en Supabase.
-- **Demo:** Owner crea servicio "Corte de pelo $5000", lo edita, lo desactiva. Aparece en otro dispositivo tras sync.
-
-### Task 6: ABM de Trabajadores + vinculación con UserProfile
-
-- **Objetivo:** CRUD de trabajadores. Al crear un trabajador, opción de invitarlo (crear UserProfile con rol worker vinculado).
-- **Guía:** Similar a servicios. Campo extra: tipo de comisión y valor. Flujo de invitación: owner ingresa email → se crea user en Supabase Auth con rol worker → se vincula `worker_id`.
-- **Tests:** Crear trabajador, invitar por email, verificar que el nuevo user puede loguearse y tiene rol worker con su worker_id asignado.
-- **Demo:** Owner crea trabajadora "Laura", la invita. Laura se loguea desde otro celular y ve su interfaz de worker.
-
-### Task 7: ABM de Clientes
-
-- **Objetivo:** CRUD de clientes con búsqueda por nombre/teléfono.
-- **Guía:** Lista con barra de búsqueda (filtro local sobre WatermelonDB query). Formulario crear/editar. Validaciones en core.
-- **Tests:** Crear cliente, buscar por nombre parcial, editar teléfono, verificar sync.
-- **Demo:** Owner busca "Mar" y aparece "María García". Crea nuevo cliente "Juan", aparece en otro dispositivo.
-
-### Task 8: Agenda diaria — crear y ver turnos
-
-- **Objetivo:** Pantalla de agenda del día con slots horarios. Crear turno asignando servicio + trabajador + cliente + horario. Validación de conflictos (no solapar turnos del mismo trabajador).
-- **Guía:** Vista como timeline del día (lista de slots). Formulario de nuevo turno con selects de servicio/worker/client. Validación de overlap en `core/`: dado worker + date + start/end, verificar que no colisione con otro appointment activo.
-- **Tests:** Vitest: función `validateNoOverlap()` con casos edge (turnos contiguos OK, solapados rechazados). RNTL: renderizar agenda con turnos mock. Integration: crear turno, verificar sync + RLS (worker solo ve los suyos).
-- **Demo:** Owner crea turno "Laura - Corte - María - 14:00 a 14:45". Aparece en la agenda del día. Laura desde su celular ve ese turno en "Mi agenda".
-
-### Task 9: Agenda diaria — editar, cancelar, completar turnos + vista worker
-
-- **Objetivo:** Acciones sobre turnos existentes. Owner puede editar/cancelar. Worker solo puede marcar como completado sus propios turnos. Filtros por worker/servicio/cliente.
-- **Guía:** Swipe actions o menú contextual en cada turno. Lógica de permisos en `core/`: `canEditAppointment(user, appointment)`. Filtros como dropdowns que modifican la query de WatermelonDB.
-- **Tests:** Test permisos: worker no puede cancelar. Owner sí. Filtro por worker muestra solo sus turnos.
-- **Demo:** Owner filtra por "Laura", ve solo sus turnos. Laura marca turno como completado desde su cel. Owner ve el cambio de estado tras sync.
-
-### Task 10: Vista semanal de agenda
-
-- **Objetivo:** Vista de agenda que muestra 7 días con indicadores de turnos por día/hora. Navegación entre semanas.
-- **Guía:** Grid o lista agrupada por día. Cada día muestra resumen (cantidad de turnos, nombres). Tap en un día navega a vista diaria. Reutilizar queries de WatermelonDB con rango de fechas.
-- **Tests:** Renderizar semana con turnos distribuidos. Navegar a semana siguiente. Tap en día abre vista diaria correcta.
-- **Demo:** Owner ve la semana con indicadores visuales. Navega entre semanas. Toca un día y llega a la agenda diaria.
-
-### Task 11: Vista de cobro — registro de pagos multi-método y multi-moneda
-
-- **Objetivo:** Desde un turno completado, registrar pago. Soportar split (parte efectivo, parte transferencia). Ingresar monto en cualquier moneda configurada, con tasa de cambio manual si difiere de base_currency.
-- **Guía:** Pantalla de cobro accesible desde turno completado. Lista de "líneas de pago" donde cada una tiene monto + moneda + método. Si moneda ≠ base_currency, campo para exchange_rate. Validación en `core/`: suma de pagos debe cubrir precio del servicio (permitir sub/sobre-pago con warning). Montos en centavos.
-- **Tests:** Vitest: validar que suma de payments cubre el precio. Calcular equivalente en base_currency. RNTL: agregar múltiples líneas de pago. Integration: cobrar y verificar records de Payment en DB.
-- **Demo:** Owner cobra turno de Laura: $3000 en efectivo + $2000 por transferencia. Se registra como pagado. Si cobra en USD con tasa 1200, se guarda amount=500 (5 USD en centavos) con exchange_rate=1200.
-
-### Task 12: Cálculo de comisiones/salario por trabajador
-
-- **Objetivo:** Pantalla (solo owner) que muestra por cada trabajador: turnos completados y cobrados en un período, monto total generado, comisión calculada.
-- **Guía:** Lógica en `core/`: dado un worker + rango de fechas, obtener sus appointments completados con payments asociados. Convertir todos los montos a base_currency usando exchange_rate de cada payment. Aplicar commission_type/value del worker. Mostrar desglose en pantalla.
-- **Tests:** Vitest: calcular comisión percentage (40% de $10000 = $4000). Fixed ($500 por servicio × 8 servicios = $4000). Caso multi-moneda: payment en USD convertido a ARS.
-- **Demo:** Owner selecciona "Laura - Marzo 2025": ve 20 turnos, $150.000 generados, comisión 40% = $60.000.
-
-### Task 13: Dashboard de métricas
-
-- **Objetivo:** Pantalla (solo owner) con métricas: turnos hoy/semana/mes (total, completados, cancelados, no-show), ingresos por período, servicio más demandado, trabajador más activo.
-- **Guía:** Funciones en `core/` que agregan datos de appointments + payments por rangos de fecha. UI con cards/gráficos simples (barras o números grandes). Queries sobre WatermelonDB local (datos ya sincronizados).
-- **Tests:** Vitest: funciones de agregación con datos mock. RNTL: renderizado de dashboard con datos.
-- **Demo:** Owner ve: "Hoy: 12 turnos (10 completados, 1 cancelado, 1 pendiente). Semana: $450.000 en ingresos. Servicio top: Corte. Worker top: Laura."
-
-### Task 14: Manejo de conflictos de sync + UX offline
-
-- **Objetivo:** Robustecer la experiencia offline: indicador de estado de conexión, cola de cambios pendientes, manejo de errores de sync (conflicto de slot rechazado), retry automático.
-- **Guía:** Banner sutil cuando está offline. Badge con cantidad de cambios sin sincronizar. Si el server rechaza un push por conflicto de slot, mostrar alerta al usuario con opción de resolver (re-asignar horario). Retry con backoff exponencial.
-- **Tests:** Simular offline → crear turno → reconectar → verificar sync. Simular conflicto de slot → verificar que se muestra error y el turno conflictivo se marca.
-- **Demo:** Poner celular en modo avión, crear turnos, desactivar modo avión, ver cómo sincroniza. Simular conflicto y ver el mensaje de resolución.
-
-### Task 15: Polish, testing E2E, y preparación para stores
-
-- **Objetivo:** Testing end-to-end del flujo completo. Performance profiling. Configurar EAS Build para generar binarios de iOS y Android. App icon, splash screen, metadata para stores.
-- **Guía:** Flujo E2E: signup owner → crear negocio → ABM → agendar semana → cobrar → ver comisiones → invitar worker → worker opera. Detox o Maestro para E2E [verificar compatibilidad con Expo]. EAS config para builds de producción.
-- **Tests:** Suite E2E completa del happy path. Performance: lista de 500+ appointments no debe laggear.
-- **Demo:** Build de producción instalado en device físico. Flujo completo funcional. Listo para submit a stores.
+- WatermelonDB usa módulos nativos; un development build es más representativo que Expo Go para validar SQLite/JSI.
+- La app actual deriva la URL de Edge Functions de la URL de Supabase; dispositivos físicos no pueden usar directamente `127.0.0.1` del host.
+- El reset de base local al cerrar sesión protege la privacidad, pero elimina cambios aún no sincronizados; la confirmación de UI lo comunica y el usuario debe sincronizar antes.
+- Los assets `icon.png`, `splash-icon.png` y `adaptive-icon.png` referenciados en `app.json` deben existir antes de un build nativo.
+- Las políticas actuales no cumplen de forma estricta la privacidad de trabajadores descrita originalmente; la corrección debe ser server-side, no solo visual.

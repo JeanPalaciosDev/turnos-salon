@@ -10,6 +10,8 @@ export type BusinessConfig = {
   base_currency: string;
   timezone: string;
   updated_at: number;
+  /** Versión monotónica asignada por el servidor para sincronización. */
+  sync_version: number;
 };
 
 export type UserRole = 'owner' | 'worker';
@@ -21,6 +23,8 @@ export type UserProfile = {
   worker_id?: string; // FK a Worker si role='worker'
   email: string;
   updated_at: number;
+  /** Versión monotónica asignada por el servidor para sincronización. */
+  sync_version: number;
 };
 
 export type Service = {
@@ -31,6 +35,8 @@ export type Service = {
   default_price: MoneyAmount;
   is_active: boolean;
   updated_at: number;
+  /** Versión monotónica asignada por el servidor para sincronización. */
+  sync_version: number;
   is_deleted: boolean;
 };
 
@@ -43,6 +49,8 @@ export type Worker = {
   commission_currency?: string; // solo si fixed_per_service
   is_active: boolean;
   updated_at: number;
+  /** Versión monotónica asignada por el servidor para sincronización. */
+  sync_version: number;
   is_deleted: boolean;
 };
 
@@ -53,6 +61,8 @@ export type Client = {
   phone?: string;
   notes?: string;
   updated_at: number;
+  /** Versión monotónica asignada por el servidor para sincronización. */
+  sync_version: number;
   is_deleted: boolean;
 };
 
@@ -70,6 +80,8 @@ export type Appointment = {
   client_id: string;
   notes?: string;
   updated_at: number;
+  /** Versión monotónica asignada por el servidor para sincronización. */
+  sync_version: number;
   is_deleted: boolean;
 };
 
@@ -86,5 +98,7 @@ export type Payment = {
   exchange_base_currency?: string;
   paid_at: number; // timestamp
   updated_at: number;
+  /** Versión monotónica asignada por el servidor para sincronización. */
+  sync_version: number;
   is_deleted: boolean;
 };
