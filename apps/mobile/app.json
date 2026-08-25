@@ -24,6 +24,17 @@
       "package": "com.turnossalon.app"
     },
     "scheme": "turnos-salon",
-    "plugins": ["expo-router"]
+    "plugins": [
+      "expo-router"
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "5884b574-6d90-444a-9458-f791fae7bdb8"
+      }
+    },
+    "owner": "jeancydev"
   }
 }
