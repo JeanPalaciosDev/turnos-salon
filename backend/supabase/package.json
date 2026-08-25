@@ -1,0 +1,14 @@
+{
+  "name": "@turnos/supabase",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Supabase functions are deployed via supabase CLI'",
+    "dev": "supabase start",
+    "clean": "rimraf .temp .turbo"
+  },
+  "devDependencies": {
+    "supabase": "^1.200.0",
+    "rimraf": "^6.0.0"
+  }
+}

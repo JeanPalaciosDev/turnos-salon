@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Turnos Salón",
+    "slug": "turnos-salon",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.turnossalon.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.turnossalon.app"
+    },
+    "scheme": "turnos-salon",
+    "plugins": ["expo-router"]
+  }
+}

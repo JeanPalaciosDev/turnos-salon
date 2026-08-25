@@ -1,0 +1,23 @@
+{
+  "name": "turnos-salon",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "backend/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "turbo": "^2"
+  },
+  "packageManager": "npm@10.8.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,6 @@
+-- Intentionally empty development seed.
+--
+-- Users for RLS tests must be created through Supabase Auth so their UUIDs are
+-- valid auth.users references. After `supabase start`, create a test owner via
+-- Auth and call public.bootstrap_owner_business(...) with that authenticated
+-- session. Do not add real credentials or production business data here.
