@@ -10,6 +10,7 @@ import {
   getBusinessBaseCurrency,
   type ServiceDraft,
 } from '../../../src/services/serviceRepository';
+import { colors, spacing, typography } from '../../../src/theme';
 
 export default function NewServiceScreen() {
   const { profile, status, syncNow } = useAuth();
@@ -59,7 +60,7 @@ export default function NewServiceScreen() {
   if (isLoadingCurrency) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator color="#1d4ed8" />
+        <ActivityIndicator color={colors.brandPrimary} />
         <Text style={styles.loadingText}>Preparando formulario…</Text>
       </View>
     );
@@ -73,11 +74,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    backgroundColor: '#f8fafc',
+    gap: spacing.md,
+    backgroundColor: colors.bgBase,
   },
   loadingText: {
-    color: '#475569',
+    color: colors.textSecondary,
+    ...typography.body,
     fontSize: 15,
   },
 });

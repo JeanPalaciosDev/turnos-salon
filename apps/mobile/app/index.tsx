@@ -2,6 +2,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { Redirect } from 'expo-router';
 
 import { useAuth } from '../src/auth/AuthProvider';
+import { colors, radius, spacing, typography } from '../src/theme';
 
 function StatusScreen({
   title,
@@ -31,7 +32,7 @@ export default function IndexScreen() {
   if (status === 'loading') {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#1d4ed8" />
+        <ActivityIndicator size="large" color={colors.brandPrimary} />
         <Text style={styles.message}>Restaurando tu sesión…</Text>
       </View>
     );
@@ -75,31 +76,32 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
-    padding: 24,
-    backgroundColor: '#f8fafc',
+    gap: spacing.lg,
+    padding: spacing.xl,
+    backgroundColor: colors.bgBase,
   },
   title: {
-    color: '#0f172a',
+    color: colors.textPrimary,
+    ...typography.h2,
     fontSize: 24,
-    fontWeight: '700',
     textAlign: 'center',
   },
   message: {
-    color: '#475569',
+    color: colors.textSecondary,
+    ...typography.body,
     fontSize: 16,
     lineHeight: 24,
     textAlign: 'center',
   },
   button: {
-    borderRadius: 10,
-    backgroundColor: '#1d4ed8',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+    borderRadius: radius.control,
+    backgroundColor: colors.brandPrimary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   buttonText: {
-    color: '#ffffff',
+    color: colors.bgSurface,
+    ...typography.bodyStrong,
     fontSize: 16,
-    fontWeight: '700',
   },
 });

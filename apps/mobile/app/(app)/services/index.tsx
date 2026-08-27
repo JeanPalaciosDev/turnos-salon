@@ -6,6 +6,7 @@ import { canManageServices } from '@turnos/core';
 import { useAuth } from '../../../src/auth/AuthProvider';
 import { ServiceModel } from '../../../src/database/models';
 import { observeServices } from '../../../src/services/serviceRepository';
+import { colors, radius, spacing, typography } from '../../../src/theme';
 
 function formatPrice(amount: number, currency: string): string {
   try {
@@ -69,7 +70,7 @@ export default function ServicesScreen() {
 
       {isLoading ? (
         <View style={styles.loading}>
-          <ActivityIndicator color="#1d4ed8" />
+          <ActivityIndicator color={colors.brandPrimary} />
           <Text style={styles.subtitle}>Cargando servicios…</Text>
         </View>
       ) : errorMessage ? (
@@ -110,117 +111,115 @@ export default function ServicesScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    gap: 16,
-    padding: 20,
-    backgroundColor: '#f8fafc',
+    gap: spacing.lg,
+    padding: spacing.xl,
+    backgroundColor: colors.bgBase,
   },
   header: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: spacing.lg,
   },
   title: {
-    color: '#0f172a',
-    fontSize: 28,
-    fontWeight: '800',
+    color: colors.textPrimary,
+    ...typography.display,
   },
   subtitle: {
-    color: '#475569',
+    color: colors.textSecondary,
+    ...typography.body,
     fontSize: 15,
     lineHeight: 21,
   },
   addButton: {
-    borderRadius: 10,
-    backgroundColor: '#1d4ed8',
-    paddingHorizontal: 15,
-    paddingVertical: 11,
+    borderRadius: radius.control,
+    backgroundColor: colors.brandPrimary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   addButtonText: {
-    color: '#ffffff',
+    color: colors.bgSurface,
+    ...typography.bodyStrong,
     fontSize: 15,
-    fontWeight: '800',
   },
   syncing: {
-    color: '#1d4ed8',
-    fontSize: 14,
-    fontWeight: '700',
+    color: colors.brandPrimary,
+    ...typography.body,
+    fontWeight: '600',
   },
   syncError: {
-    color: '#b91c1c',
-    fontSize: 14,
-    lineHeight: 20,
+    color: colors.status.cancelled.border,
+    ...typography.body,
   },
   loading: {
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 48,
+    gap: spacing.md,
+    paddingVertical: spacing.xxxl,
   },
   emptyCard: {
     alignItems: 'flex-start',
-    gap: 10,
-    borderRadius: 16,
-    backgroundColor: '#ffffff',
-    padding: 20,
+    gap: spacing.md,
+    borderRadius: radius.panel,
+    backgroundColor: colors.bgSurface,
+    padding: spacing.xl,
   },
   emptyTitle: {
-    color: '#0f172a',
-    fontSize: 19,
-    fontWeight: '800',
+    color: colors.textPrimary,
+    ...typography.h2,
   },
   emptyText: {
-    color: '#475569',
+    color: colors.textSecondary,
+    ...typography.body,
     fontSize: 15,
     lineHeight: 22,
   },
   primaryButton: {
-    borderRadius: 10,
-    backgroundColor: '#1d4ed8',
-    marginTop: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: radius.control,
+    backgroundColor: colors.brandPrimary,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   primaryButtonText: {
-    color: '#ffffff',
+    color: colors.bgSurface,
+    ...typography.bodyStrong,
     fontSize: 15,
-    fontWeight: '800',
   },
   list: {
-    gap: 10,
+    gap: spacing.md,
   },
   serviceCard: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: spacing.md,
     borderWidth: 1,
-    borderColor: '#dbeafe',
-    borderRadius: 14,
-    backgroundColor: '#ffffff',
-    padding: 16,
+    borderColor: colors.borderSubtle,
+    borderRadius: radius.card,
+    backgroundColor: colors.bgSurface,
+    padding: spacing.lg,
   },
   serviceMain: {
     flex: 1,
-    gap: 4,
+    gap: spacing.xs,
   },
   serviceName: {
-    color: '#0f172a',
-    fontSize: 17,
-    fontWeight: '800',
+    color: colors.textPrimary,
+    ...typography.h3,
   },
   serviceDetails: {
-    color: '#475569',
-    fontSize: 14,
+    color: colors.textSecondary,
+    ...typography.body,
   },
   active: {
-    color: '#047857',
-    fontSize: 13,
-    fontWeight: '800',
+    color: colors.status.confirmed.border,
+    ...typography.small,
+    fontWeight: '600',
   },
   inactive: {
-    color: '#64748b',
-    fontSize: 13,
-    fontWeight: '800',
+    color: colors.textMuted,
+    ...typography.small,
+    fontWeight: '600',
   },
   pressed: {
     opacity: 0.7,

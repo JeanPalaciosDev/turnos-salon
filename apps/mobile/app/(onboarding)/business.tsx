@@ -12,6 +12,7 @@ import {
 import { Redirect, router } from 'expo-router';
 
 import { useAuth } from '../../src/auth/AuthProvider';
+import { colors, radius, shadow, spacing, typography } from '../../src/theme';
 
 const DEFAULT_TIMEZONE = 'America/Argentina/Buenos_Aires';
 
@@ -58,7 +59,7 @@ export default function BusinessOnboardingScreen() {
           autoCapitalize="words"
           onChangeText={setName}
           placeholder="Ej. Salón Aurora"
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={colors.textMuted}
           style={styles.input}
           value={name}
         />
@@ -69,7 +70,7 @@ export default function BusinessOnboardingScreen() {
           maxLength={3}
           onChangeText={(value) => setBaseCurrency(value.toUpperCase())}
           placeholder="ARS"
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={colors.textMuted}
           style={styles.input}
           value={baseCurrency}
         />
@@ -80,7 +81,7 @@ export default function BusinessOnboardingScreen() {
           autoCorrect={false}
           onChangeText={setTimezone}
           placeholder={DEFAULT_TIMEZONE}
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={colors.textMuted}
           style={styles.input}
           value={timezone}
         />
@@ -95,7 +96,7 @@ export default function BusinessOnboardingScreen() {
             (pressed || isSubmitting) && styles.buttonPressed,
           ]}
         >
-          {isSubmitting ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.primaryButtonText}>Crear salón</Text>}
+          {isSubmitting ? <ActivityIndicator color={colors.bgSurface} /> : <Text style={styles.primaryButtonText}>Crear salón</Text>}
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -106,72 +107,65 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#eff6ff',
+    padding: spacing.xl,
+    backgroundColor: colors.bgBase,
   },
   card: {
-    gap: 12,
-    borderRadius: 20,
-    backgroundColor: '#ffffff',
-    padding: 24,
-    shadowColor: '#0f172a',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 4,
+    gap: spacing.md,
+    borderRadius: radius.panel,
+    backgroundColor: colors.bgSurface,
+    padding: spacing.xl,
+    ...shadow.raised,
   },
   eyebrow: {
-    color: '#2563eb',
-    fontSize: 12,
-    fontWeight: '800',
+    color: colors.brandPrimary,
+    ...typography.small,
     letterSpacing: 1.2,
   },
   title: {
-    color: '#0f172a',
-    fontSize: 30,
-    fontWeight: '800',
+    color: colors.textPrimary,
+    ...typography.display,
   },
   subtitle: {
-    marginBottom: 8,
-    color: '#475569',
+    marginBottom: spacing.sm,
+    color: colors.textSecondary,
+    ...typography.body,
     fontSize: 16,
     lineHeight: 22,
   },
   label: {
-    color: '#334155',
-    fontSize: 14,
-    fontWeight: '700',
+    color: colors.textPrimary,
+    ...typography.bodyStrong,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 10,
-    color: '#0f172a',
+    borderColor: colors.borderSubtle,
+    borderRadius: radius.control,
+    color: colors.textPrimary,
     fontSize: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   error: {
-    color: '#b91c1c',
-    fontSize: 14,
-    lineHeight: 20,
+    color: colors.status.cancelled.border,
+    ...typography.body,
   },
   primaryButton: {
     alignItems: 'center',
     minHeight: 48,
     justifyContent: 'center',
-    borderRadius: 10,
-    backgroundColor: '#1d4ed8',
-    marginTop: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: radius.control,
+    backgroundColor: colors.brandPrimary,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   buttonPressed: {
-    opacity: 0.7,
+    backgroundColor: colors.brandPrimaryPressed,
   },
   primaryButtonText: {
-    color: '#ffffff',
+    color: colors.bgSurface,
+    ...typography.bodyStrong,
     fontSize: 16,
-    fontWeight: '800',
   },
 });

@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View
 import { Redirect, router } from 'expo-router';
 
 import { useAuth } from '../../src/auth/AuthProvider';
+import { colors, radius, spacing, typography } from '../../src/theme';
 
 const syncLabels = {
   idle: 'Sin sincronizar todavía',
@@ -86,7 +87,7 @@ export default function HomeScreen() {
           ]}
         >
           {syncStatus === 'syncing' ? (
-            <ActivityIndicator color="#1d4ed8" />
+            <ActivityIndicator color={colors.brandPrimary} />
           ) : (
             <Text style={styles.secondaryButtonText}>Sincronizar ahora</Text>
           )}
@@ -101,6 +102,9 @@ export default function HomeScreen() {
           </Text>
           <Pressable onPress={() => router.push('/services')} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Gestionar servicios</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/clients')} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Gestionar clientes</Text>
           </Pressable>
         </View>
       ) : (
@@ -117,7 +121,7 @@ export default function HomeScreen() {
         onPress={confirmSignOut}
         style={({ pressed }) => [styles.signOutButton, (pressed || isSigningOut) && styles.buttonPressed]}
       >
-        {isSigningOut ? <ActivityIndicator color="#b91c1c" /> : <Text style={styles.signOutText}>Cerrar sesión</Text>}
+        {isSigningOut ? <ActivityIndicator color={colors.status.cancelled.border} /> : <Text style={styles.signOutText}>Cerrar sesión</Text>}
       </Pressable>
     </ScrollView>
   );
@@ -126,124 +130,120 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    gap: 16,
-    padding: 20,
-    backgroundColor: '#f8fafc',
+    gap: spacing.lg,
+    padding: spacing.xl,
+    backgroundColor: colors.bgBase,
   },
   hero: {
-    gap: 8,
-    paddingTop: 8,
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
   },
   eyebrow: {
-    color: '#2563eb',
-    fontSize: 12,
-    fontWeight: '800',
+    color: colors.brandPrimary,
+    ...typography.small,
     letterSpacing: 1.2,
   },
   title: {
-    color: '#0f172a',
-    fontSize: 30,
-    fontWeight: '800',
+    color: colors.textPrimary,
+    ...typography.display,
   },
   subtitle: {
-    color: '#475569',
+    color: colors.textSecondary,
+    ...typography.body,
     fontSize: 16,
     lineHeight: 23,
   },
   card: {
-    gap: 8,
+    gap: spacing.sm,
     borderWidth: 1,
-    borderColor: '#dbeafe',
-    borderRadius: 16,
-    backgroundColor: '#ffffff',
-    padding: 18,
+    borderColor: colors.borderSubtle,
+    borderRadius: radius.panel,
+    backgroundColor: colors.bgSurface,
+    padding: spacing.lg,
   },
   cardLabel: {
-    color: '#64748b',
-    fontSize: 12,
-    fontWeight: '800',
+    color: colors.textMuted,
+    ...typography.small,
     letterSpacing: 1,
   },
   email: {
-    color: '#0f172a',
-    fontSize: 17,
-    fontWeight: '700',
+    color: colors.textPrimary,
+    ...typography.h3,
   },
   role: {
-    color: '#475569',
+    color: colors.textSecondary,
+    ...typography.body,
     fontSize: 15,
   },
   syncStatus: {
-    color: '#0f172a',
-    fontSize: 17,
-    fontWeight: '700',
+    color: colors.textPrimary,
+    ...typography.h3,
   },
   syncError: {
-    color: '#b91c1c',
-    fontSize: 14,
-    lineHeight: 20,
+    color: colors.status.cancelled.border,
+    ...typography.body,
   },
   secondaryButton: {
     alignItems: 'center',
     minHeight: 44,
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#1d4ed8',
-    borderRadius: 10,
-    marginTop: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    borderColor: colors.brandPrimary,
+    borderRadius: radius.control,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   secondaryButtonText: {
-    color: '#1d4ed8',
+    color: colors.brandPrimary,
+    ...typography.bodyStrong,
     fontSize: 15,
-    fontWeight: '800',
   },
   nextCard: {
-    gap: 8,
-    borderRadius: 16,
-    backgroundColor: '#e0f2fe',
-    padding: 18,
+    gap: spacing.sm,
+    borderRadius: radius.panel,
+    backgroundColor: colors.brandSoft,
+    padding: spacing.lg,
   },
   nextTitle: {
-    color: '#0c4a6e',
-    fontSize: 16,
-    fontWeight: '800',
+    color: colors.textPrimary,
+    ...typography.h3,
   },
   nextText: {
-    color: '#075985',
+    color: colors.textSecondary,
+    ...typography.body,
     fontSize: 15,
     lineHeight: 22,
   },
   primaryButton: {
     alignItems: 'center',
     alignSelf: 'flex-start',
-    borderRadius: 10,
-    backgroundColor: '#1d4ed8',
-    marginTop: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
+    borderRadius: radius.control,
+    backgroundColor: colors.brandPrimary,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   primaryButtonText: {
-    color: '#ffffff',
+    color: colors.bgSurface,
+    ...typography.bodyStrong,
     fontSize: 15,
-    fontWeight: '800',
   },
   signOutButton: {
     alignItems: 'center',
     minHeight: 44,
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#fecaca',
-    borderRadius: 10,
+    borderColor: colors.status.cancelled.border,
+    borderRadius: radius.control,
     marginTop: 'auto',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   signOutText: {
-    color: '#b91c1c',
+    color: colors.status.cancelled.border,
+    ...typography.bodyStrong,
     fontSize: 15,
-    fontWeight: '800',
   },
   buttonPressed: {
     opacity: 0.65,

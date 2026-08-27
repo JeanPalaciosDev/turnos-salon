@@ -12,6 +12,7 @@ import {
   type ServiceDraft,
   updateService,
 } from '../../../src/services/serviceRepository';
+import { colors, radius, spacing, typography } from '../../../src/theme';
 
 export default function ServiceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -112,7 +113,7 @@ export default function ServiceDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator color="#1d4ed8" />
+        <ActivityIndicator color={colors.brandPrimary} />
         <Text style={styles.loadingText}>Cargando servicio…</Text>
       </View>
     );
@@ -142,7 +143,7 @@ export default function ServiceDetailScreen() {
           ]}
         >
           {isToggling ? (
-            <ActivityIndicator color={service.isActive ? '#b91c1c' : '#047857'} />
+            <ActivityIndicator color={service.isActive ? colors.status.cancelled.border : colors.status.confirmed.border} />
           ) : (
             <Text style={service.isActive ? styles.deactivateText : styles.activateText}>
               {service.isActive ? 'Desactivar servicio' : 'Reactivar servicio'}
@@ -157,79 +158,81 @@ export default function ServiceDetailScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: colors.bgBase,
   },
   loading: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    backgroundColor: '#f8fafc',
+    gap: spacing.md,
+    backgroundColor: colors.bgBase,
   },
   loadingText: {
-    color: '#475569',
+    color: colors.textSecondary,
+    ...typography.body,
     fontSize: 15,
   },
   errorContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
-    padding: 24,
-    backgroundColor: '#f8fafc',
+    gap: spacing.lg,
+    padding: spacing.xl,
+    backgroundColor: colors.bgBase,
   },
   errorText: {
-    color: '#b91c1c',
+    color: colors.status.cancelled.border,
+    ...typography.body,
     fontSize: 16,
     lineHeight: 23,
     textAlign: 'center',
   },
   backButton: {
-    borderRadius: 10,
-    backgroundColor: '#1d4ed8',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: radius.control,
+    backgroundColor: colors.brandPrimary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   backButtonText: {
-    color: '#ffffff',
+    color: colors.bgSurface,
+    ...typography.bodyStrong,
     fontSize: 15,
-    fontWeight: '800',
   },
   actionArea: {
     borderTopWidth: 1,
-    borderColor: '#e2e8f0',
-    backgroundColor: '#ffffff',
-    padding: 16,
+    borderColor: colors.borderSubtle,
+    backgroundColor: colors.bgSurface,
+    padding: spacing.lg,
   },
   deactivateButton: {
     alignItems: 'center',
     minHeight: 44,
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#fecaca',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    borderColor: colors.status.cancelled.border,
+    borderRadius: radius.control,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   activateButton: {
     alignItems: 'center',
     minHeight: 44,
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#a7f3d0',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    borderColor: colors.status.confirmed.border,
+    borderRadius: radius.control,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   deactivateText: {
-    color: '#b91c1c',
+    color: colors.status.cancelled.border,
+    ...typography.bodyStrong,
     fontSize: 15,
-    fontWeight: '800',
   },
   activateText: {
-    color: '#047857',
+    color: colors.status.confirmed.border,
+    ...typography.bodyStrong,
     fontSize: 15,
-    fontWeight: '800',
   },
   buttonPressed: {
     opacity: 0.65,
