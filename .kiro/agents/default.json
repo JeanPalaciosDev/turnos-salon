@@ -1,0 +1,12 @@
+{
+  "name": "default",
+  "description": "Agente por defecto para turnos-salon. Corre type-check de apps/mobile al finalizar cada turno.",
+  "hooks": {
+    "stop": [
+      {
+        "command": "powershell -NoProfile -Command \"cd apps/mobile; npx tsc --noEmit\"",
+        "timeout_ms": 120000
+      }
+    ]
+  }
+}

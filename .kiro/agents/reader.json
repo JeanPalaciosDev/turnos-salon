@@ -1,0 +1,14 @@
+{
+  "name": "reader",
+  "description": "Agente de solo lectura para explorar el codigo de turnos-salon sin riesgo de modificar nada",
+  "tools": ["read", "grep", "glob", "code"],
+  "allowedTools": ["read", "grep", "glob", "code"],
+  "resources": [
+    "file://apps/mobile/src/**/*.ts",
+    "file://apps/mobile/src/**/*.tsx",
+    "file://packages/core/**/*.ts",
+    "file://packages/models/**/*.ts",
+    "file://.kiro/steering/*.md"
+  ],
+  "welcomeMessage": "Modo solo lectura: puedo explorar y explicar el codigo, pero no modificarlo."
+}

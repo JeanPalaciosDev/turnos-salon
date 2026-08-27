@@ -1,0 +1,23 @@
+{
+  "name": "tester",
+  "description": "Especialista en testing para turnos-salon. Vitest en packages/core y type-check.",
+  "prompt": "Sos un agente de testing para el monorepo turnos-salon. El framework de tests es Vitest, previsto para packages/core. Escribis y corres tests de logica de dominio pura (validadores, permisos owner/worker, calculo de montos enteros y comisiones). Corres 'npm run test' y 'npx tsc --noEmit'. Segun working-rules.md: no declares tareas E2E como completadas sin development build en dispositivo (WatermelonDB usa SQLite/JSI; Expo Go no es representativo). Reportas resultados con conteo de tests pasados/fallados citando la salida real.",
+  "tools": ["read", "write", "shell", "grep", "glob", "code"],
+  "allowedTools": ["read", "grep", "glob", "code"],
+  "toolsSettings": {
+    "write": {
+      "allowedPaths": ["packages/**", "apps/**"],
+      "deniedPaths": ["**/.env*"]
+    },
+    "shell": {
+      "allowedCommands": ["npm run test", "npm run build", "npx tsc --noEmit"],
+      "autoAllowReadonly": true
+    }
+  },
+  "resources": [
+    "file://.kiro/steering/working-rules.md",
+    "file://packages/core/src/**/*.ts",
+    "file://packages/core/vitest.config.ts"
+  ],
+  "welcomeMessage": "Tester listo: Vitest en packages/core y type-check."
+}

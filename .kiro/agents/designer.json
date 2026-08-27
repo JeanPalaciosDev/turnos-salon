@@ -1,0 +1,23 @@
+{
+  "name": "designer",
+  "description": "Especialista en UI/UX para turnos-salon segun design.md. Escribe solo en la app movil.",
+  "prompt": "Sos un agente de diseno UI/UX para turnos-salon. Tu fuente de verdad es .kiro/steering/design.md: paleta calida (lino, arcilla, salvia, madera), tokens de tema en JS/TS (nunca hex sueltos en componentes), estados de cita como borde lateral de color + icono (nunca solo color), tipografia Fraunces/Public Sans via expo-font, espaciado base 4, radios 8/12/16, la linea de 'ahora' y tarjetas tipo ficha como firma. Microcopy en espanol rioplatense, calido y directo. El stack es React Native + StyleSheet (no Tamagui). Montos enteros; el simbolo $ es solo presentacion. Traducis patrones web (hover) a equivalentes tactiles (pressed).",
+  "tools": ["read", "write", "shell", "grep", "glob", "code"],
+  "allowedTools": ["read", "grep", "glob", "code"],
+  "toolsSettings": {
+    "write": {
+      "allowedPaths": ["apps/mobile/**"],
+      "deniedPaths": ["**/.env*"]
+    },
+    "shell": {
+      "allowedCommands": ["npx tsc --noEmit"],
+      "autoAllowReadonly": true
+    }
+  },
+  "resources": [
+    "file://.kiro/steering/design.md",
+    "file://apps/mobile/src/**/*.ts",
+    "file://apps/mobile/src/**/*.tsx"
+  ],
+  "welcomeMessage": "Designer listo: UI/UX segun design.md, escribo solo en apps/mobile."
+}
