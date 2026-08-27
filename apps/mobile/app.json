@@ -25,7 +25,13 @@
     },
     "scheme": "turnos-salon",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font",
+      ["expo-build-properties", {
+        "android": {
+          "usesCleartextTraffic": true
+        }
+      }]
     ],
     "extra": {
       "router": {
