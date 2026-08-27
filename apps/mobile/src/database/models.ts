@@ -96,6 +96,62 @@ export class WorkerModel extends Model {
 
 export class ClientModel extends Model {
   static table = TABLES.CLIENTS;
+
+  get businessId(): string {
+    return this._getRaw('business_id') as string;
+  }
+
+  set businessId(value: string) {
+    this._setRaw('business_id', value);
+  }
+
+  get name(): string {
+    return this._getRaw('name') as string;
+  }
+
+  set name(value: string) {
+    this._setRaw('name', value);
+  }
+
+  get phone(): string | undefined {
+    return (this._getRaw('phone') as string | null) ?? undefined;
+  }
+
+  set phone(value: string | undefined) {
+    this._setRaw('phone', value ?? null);
+  }
+
+  get notes(): string | undefined {
+    return (this._getRaw('notes') as string | null) ?? undefined;
+  }
+
+  set notes(value: string | undefined) {
+    this._setRaw('notes', value ?? null);
+  }
+
+  get updatedAt(): number {
+    return this._getRaw('updated_at') as number;
+  }
+
+  set updatedAt(value: number) {
+    this._setRaw('updated_at', value);
+  }
+
+  get syncVersion(): number {
+    return this._getRaw('sync_version') as number;
+  }
+
+  set syncVersion(value: number) {
+    this._setRaw('sync_version', value);
+  }
+
+  get isDeleted(): boolean {
+    return this._getRaw('is_deleted') as boolean;
+  }
+
+  set isDeleted(value: boolean) {
+    this._setRaw('is_deleted', value);
+  }
 }
 
 export class AppointmentModel extends Model {

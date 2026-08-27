@@ -13,43 +13,26 @@ import {
 
 import { colors, radius, shadow, spacing, typography } from '../theme';
 
-import type { ServiceDraft } from './serviceRepository';
+import type { ClientDraft } from './clientRepository';
 
-type ServiceFormProps = {
-  initialValue: ServiceDraft;
+type ClientFormProps = {
+  initialValue: ClientDraft;
   submitLabel: string;
-  onSubmit: (value: ServiceDraft) => Promise<void>;
+  onSubmit: (value: ClientDraft) => Promise<void>;
 };
 
-function parsePositiveInteger(value: string): number {
-  const normalized = value.trim();
-
-  if (!/^\d+$/.test(normalized)) {
-    return Number.NaN;
-  }
-
-  return Number(normalized);
-}
-
-export function ServiceForm({ initialValue, submitLabel, onSubmit }: ServiceFormProps) {
+export function ClientForm({ initialValue, submitLabel, onSubmit }: ClientFormProps) {
   const [name, setName] = useState(initialValue.name);
-  const [duration, setDuration] = useState(String(initialValue.durationMinutes));
-  const [priceAmount, setPriceAmount] = useState(String(initialValue.defaultPriceAmount));
-  const [currency, setCurrency] = useState(initialValue.defaultPriceCurrency);
+  const [phone, setPhone] = useState(initialValue.phone ?? '');
+  const [notes, setNotes] = useState(initialValue.notes ?? '');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setName(initialValue.name);
-    setDuration(String(initialValue.durationMinutes));
-    setPriceAmount(String(initialValue.defaultPriceAmount));
-    setCurrency(initialValue.defaultPriceCurrency);
-  }, [
-    initialValue.defaultPriceAmount,
-    initialValue.defaultPriceCurrency,
-    initialValue.durationMinutes,
-    initialValue.name,
-  ]);
+    setPhone(initialValue.phone ?? '');
+    setNotes(initialValue.notes ?? '');
+  }, [initialValue.name, initialValue.phone, initialValue.notes]);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -58,12 +41,12 @@ export function ServiceForm({ initialValue, submitLabel, onSubmit }: ServiceForm
     try {
       await onSubmit({
         name,
-        durationMinutes: parsePositiveInteger(duration),
-        defaultPriceAmount: parsePositiveInteger(priceAmount),
-        defaultPriceCurrency: currency,
+        // El repositorio normaliza vacíos a undefined; acá solo pasamos el texto tipeado.
+        phone,
+        notes,
       });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'No se pudo guardar el servicio.');
+      setErrorMessage(error instanceof Error ? error.message : 'No se pudo guardar el cliente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -77,50 +60,38 @@ export function ServiceForm({ initialValue, submitLabel, onSubmit }: ServiceForm
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Text style={styles.helper}>
-            Los importes se guardan en la unidad mínima: por ejemplo, 5000 representa $50,00.
+            El nombre es lo único obligatorio. Sumá teléfono y notas si te sirven para el día a día.
           </Text>
 
           <Text style={styles.label}>Nombre</Text>
           <TextInput
             autoCapitalize="words"
             onChangeText={setName}
-            placeholder="Ej. Corte de pelo"
+            placeholder="Ej. María López"
             placeholderTextColor={colors.textMuted}
             style={styles.input}
             value={name}
           />
 
-          <Text style={styles.label}>Duración (minutos)</Text>
+          <Text style={styles.label}>Teléfono (opcional)</Text>
           <TextInput
-            inputMode="numeric"
-            keyboardType="number-pad"
-            onChangeText={setDuration}
-            placeholder="45"
+            inputMode="tel"
+            keyboardType="phone-pad"
+            onChangeText={setPhone}
+            placeholder="Ej. 11 2345 6789"
             placeholderTextColor={colors.textMuted}
             style={styles.input}
-            value={duration}
+            value={phone}
           />
 
-          <Text style={styles.label}>Precio (unidad mínima)</Text>
+          <Text style={styles.label}>Notas (opcional)</Text>
           <TextInput
-            inputMode="numeric"
-            keyboardType="number-pad"
-            onChangeText={setPriceAmount}
-            placeholder="5000"
+            multiline
+            onChangeText={setNotes}
+            placeholder="Preferencias, alergias, recordatorios…"
             placeholderTextColor={colors.textMuted}
-            style={styles.input}
-            value={priceAmount}
-          />
-
-          <Text style={styles.label}>Moneda</Text>
-          <TextInput
-            autoCapitalize="characters"
-            maxLength={3}
-            onChangeText={(value) => setCurrency(value.toUpperCase())}
-            placeholder="ARS"
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-            value={currency}
+            style={[styles.input, styles.notesInput]}
+            value={notes}
           />
 
           {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
@@ -133,7 +104,11 @@ export function ServiceForm({ initialValue, submitLabel, onSubmit }: ServiceForm
               (pressed || isSubmitting) && styles.buttonPressed,
             ]}
           >
-            {isSubmitting ? <ActivityIndicator color={colors.bgSurface} /> : <Text style={styles.submitText}>{submitLabel}</Text>}
+            {isSubmitting ? (
+              <ActivityIndicator color={colors.bgSurface} />
+            ) : (
+              <Text style={styles.submitText}>{submitLabel}</Text>
+            )}
           </Pressable>
         </View>
       </ScrollView>
@@ -177,6 +152,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
+  },
+  notesInput: {
+    minHeight: 96,
+    textAlignVertical: 'top',
   },
   error: {
     color: colors.status.cancelled.border,
