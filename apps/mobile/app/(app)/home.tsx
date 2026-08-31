@@ -100,19 +100,28 @@ export default function HomeScreen() {
           <Text style={styles.nextText}>
             Creá, editá, desactivá o reactivá los servicios que estarán disponibles al agendar turnos.
           </Text>
-          <Pressable onPress={() => router.push('/services')} style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>Gestionar servicios</Text>
+          <Pressable onPress={() => router.push('/appointments')} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Abrir agenda del día</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/services')} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Gestionar servicios</Text>
           </Pressable>
           <Pressable onPress={() => router.push('/clients')} style={styles.secondaryButton}>
             <Text style={styles.secondaryButtonText}>Gestionar clientes</Text>
           </Pressable>
+          <Pressable onPress={() => router.push('/workers')} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Gestionar trabajadores</Text>
+          </Pressable>
         </View>
       ) : (
         <View style={styles.nextCard}>
-          <Text style={styles.nextTitle}>Siguiente paso</Text>
+          <Text style={styles.nextTitle}>Tu agenda</Text>
           <Text style={styles.nextText}>
-            Conectar el flujo de invitación de trabajadores y la agenda personal.
+            Consultá los turnos asignados a tu nombre para el día seleccionado.
           </Text>
+          <Pressable onPress={() => router.push('/appointments')} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Ver mi agenda</Text>
+          </Pressable>
         </View>
       )}
 

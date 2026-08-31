@@ -46,6 +46,10 @@ export const supabase: SupabaseClient | null =
 
 export const syncEndpoint = supabaseUrl ? `${supabaseUrl}/functions/v1/sync` : null;
 
+export const validateSlotEndpoint = supabaseUrl
+  ? `${supabaseUrl}/functions/v1/validate-slot`
+  : null;
+
 export function getSupabaseClient(): SupabaseClient {
   if (!supabase) {
     throw new Error(supabaseConfigurationError ?? 'Supabase no está configurado.');
