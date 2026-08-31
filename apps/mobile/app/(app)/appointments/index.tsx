@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,7 +12,11 @@ import {
 import { Redirect, router } from 'expo-router';
 
 import { useAuth } from '../../../src/auth/AuthProvider';
-import { observeAppointmentsForDay } from '../../../src/appointments/appointmentRepository';
+import {
+  AppointmentOfflineError,
+  completeOwnAppointment,
+  observeAppointmentsForDay,
+} from '../../../src/appointments/appointmentRepository';
 import { statusColors, statusIcon, statusLabel } from '../../../src/appointments/status';
 import { database } from '../../../src/database';
 import { AppointmentModel, ClientModel, ServiceModel, WorkerModel } from '../../../src/database/models';
@@ -84,7 +89,7 @@ function useNowMinutes(): number {
 }
 
 export default function AgendaScreen() {
-  const { profile, status, syncErrorMessage, syncStatus } = useAuth();
+  const { profile, status, syncErrorMessage, syncNow, syncStatus } = useAuth();
   const { width } = useWindowDimensions();
   const [selectedDate, setSelectedDate] = useState(() => toIsoDate(new Date()));
   const [appointments, setAppointments] = useState<AppointmentModel[]>([]);
@@ -193,6 +198,41 @@ export default function AgendaScreen() {
   }
 
   const isOwner = profile.role === 'owner';
+
+  // Worker: confirmar y marcar completado vía RPC dedicada (online). El owner
+  // usa el flujo de detalle (tap → /appointments/[id]) y no pasa por acá.
+  const handleCompleteAppointment = (appointment: AppointmentModel) => {
+    Alert.alert(
+      'Marcar como completada',
+      '¿Confirmás que este turno ya se realizó?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Completar',
+          style: 'default',
+          onPress: () => {
+            void (async () => {
+              try {
+                await completeOwnAppointment(profile, appointment.id);
+                // La agenda es reactiva (observe); igual pedimos pull/push para
+                // que server-wins confirme la transición cuanto antes.
+                await syncNow();
+              } catch (error) {
+                const message =
+                  error instanceof AppointmentOfflineError
+                    ? error.message
+                    : error instanceof Error
+                      ? error.message
+                      : 'No se pudo completar el turno.';
+                Alert.alert('No se pudo completar', message);
+              }
+            })();
+          },
+        },
+      ]
+    );
+  };
+
   const visibleWorkers =
     isNarrow && focusedWorkerId
       ? workers.filter((worker) => worker.id === focusedWorkerId)
@@ -355,10 +395,13 @@ export default function AgendaScreen() {
                             appointment={appointment}
                             serviceName={services.get(appointment.serviceId)?.name}
                             clientName={clients.get(appointment.clientId)?.name}
+                            actionable={!isOwner && appointment.status === 'scheduled'}
                             onPress={
                               isOwner
                                 ? () => router.push(`/appointments/${appointment.id}`)
-                                : undefined
+                                : appointment.status === 'scheduled'
+                                  ? () => handleCompleteAppointment(appointment)
+                                  : undefined
                             }
                           />
                         ))}
@@ -387,9 +430,16 @@ type AppointmentCardProps = {
   serviceName?: string;
   clientName?: string;
   onPress?: () => void;
+  actionable?: boolean;
 };
 
-function AppointmentCard({ appointment, serviceName, clientName, onPress }: AppointmentCardProps) {
+function AppointmentCard({
+  appointment,
+  serviceName,
+  clientName,
+  onPress,
+  actionable = false,
+}: AppointmentCardProps) {
   const startMinutes = timeToMinutes(appointment.startTime);
   const endMinutes = timeToMinutes(appointment.endTime);
   const top = (startMinutes - DAY_START_MINUTES) * PIXELS_PER_MINUTE;
@@ -424,7 +474,11 @@ function AppointmentCard({ appointment, serviceName, clientName, onPress }: Appo
           {serviceName ?? 'Servicio'}
         </Text>
       ) : null}
-      {height > 72 ? (
+      {actionable && height > 72 ? (
+        <Text style={[styles.cardAction, { color: colors.brandPrimary }]} numberOfLines={1}>
+          ✓ Tocá para completar
+        </Text>
+      ) : height > 72 ? (
         <Text style={[styles.cardStatus, { color: palette.border }]} numberOfLines={1}>
           {statusLabel(appointment.status)}
         </Text>
@@ -663,6 +717,10 @@ const styles = StyleSheet.create({
   },
   cardStatus: {
     ...typography.micro,
+  },
+  cardAction: {
+    ...typography.micro,
+    fontWeight: '600',
   },
   cancelledText: {
     textDecorationLine: 'line-through',

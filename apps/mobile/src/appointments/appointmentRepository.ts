@@ -3,6 +3,7 @@ import {
   type Appointment,
   type AppointmentStatus,
   canCancelAppointment,
+  canCompleteAppointment,
   canCreateAppointment,
   canEditAppointment,
   type UserProfile,
@@ -13,7 +14,7 @@ import { TABLES } from '@turnos/models';
 import { generateUuidV7 } from '../auth/uuid';
 import { database } from '../database';
 import { AppointmentModel, ServiceModel } from '../database/models';
-import { validateSlotEndpoint } from '../lib/supabase';
+import { getSupabaseClient, validateSlotEndpoint } from '../lib/supabase';
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -322,6 +323,80 @@ export async function cancelAppointment(
     appointment.update((record) => {
       assertAppointmentBelongsToProfile(record, profile);
       record.status = 'cancelled';
+      record.updatedAt = Date.now();
+    })
+  );
+}
+
+/**
+ * Error que indica que la completación requiere conexión. La transición
+ * worker→completado NO usa el bucket de sync genérico (el worker no puede hacer
+ * push genérico): va por la RPC dedicada `complete_own_appointment`, que es online.
+ */
+export class AppointmentOfflineError extends Error {
+  constructor() {
+    super('Necesitás conexión para marcar el turno como completado.');
+    this.name = 'AppointmentOfflineError';
+  }
+}
+
+/**
+ * Marca un turno propio del worker como completado (R8.3). A diferencia de
+ * create/update/cancel del owner (writes locales offline-first que viajan por el
+ * bucket `created`/`updated` del sync genérico), la completación del worker es
+ * ONLINE y va por la RPC dedicada `complete_own_appointment` (SECURITY DEFINER):
+ * el worker no tiene permiso de push genérico ni de UPDATE directo sobre
+ * appointments (la política RLS de UPDATE del worker se eliminó en 00003).
+ *
+ * Doble revalidación de permiso: `canCompleteAppointment` en cliente antes de
+ * tocar red + la RPC en el servidor como única fuente de verdad (filtra por
+ * `get_user_worker_id()`, `status='scheduled'` y `is_deleted=false`). Un worker
+ * jamás puede completar el turno de otro.
+ *
+ * Modelo server-wins: tras la RPC exitosa se hace un update local optimista a
+ * `status='completed'` para feedback inmediato; el próximo pull lo confirma.
+ * Sin red, se bloquea la acción (AppointmentOfflineError) para evitar divergencia.
+ */
+export async function completeOwnAppointment(
+  profile: UserProfile,
+  appointmentId: string
+): Promise<AppointmentModel> {
+  // Revalidar ownership + permiso ANTES de tocar red. getAppointment ya valida
+  // business_id y, para worker, que el turno sea suyo.
+  const appointment = await getAppointment(profile, appointmentId);
+
+  if (!canCompleteAppointment(profile, toAppointment(appointment))) {
+    throw new Error('No tenés permiso para completar este turno.');
+  }
+
+  if (appointment.status !== 'scheduled') {
+    throw new Error('Solo se pueden completar turnos pendientes.');
+  }
+
+  // La RPC corre con el token del worker (sin service role). Es la única vía de
+  // escritura del worker sobre appointments.
+  const { error } = await getSupabaseClient().rpc('complete_own_appointment', {
+    p_appointment_id: appointmentId,
+  });
+
+  if (error) {
+    // Los errores de red de supabase-js suelen no traer `code`. Distinguimos un
+    // fallo online-only para poder mostrar un mensaje accionable.
+    const isNetwork =
+      !error.code && /fetch|network|failed to fetch|timeout/i.test(error.message ?? '');
+
+    if (isNetwork) {
+      throw new AppointmentOfflineError();
+    }
+
+    throw new Error(`No se pudo completar el turno: ${error.message}`);
+  }
+
+  // Update local optimista (server-wins lo confirmará en el próximo pull).
+  return database.write(async () =>
+    appointment.update((record) => {
+      assertAppointmentBelongsToProfile(record, profile);
+      record.status = 'completed';
       record.updatedAt = Date.now();
     })
   );

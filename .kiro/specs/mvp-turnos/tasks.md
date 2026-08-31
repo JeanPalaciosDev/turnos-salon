@@ -65,7 +65,11 @@
   - _Pendiente asociado: validación E2E (crear offline → push → pull → rechazo de solapamiento por GiST, preflight contra validate-slot en dispositivo) en tarea 13. No `[x]` de E2E aquí._
   - _R8_
 
-- [ ] 12. Vista worker: agenda propia y transición `complete_own_appointment`
+- [x] 12. Vista worker: agenda propia y transición `complete_own_appointment`
+  - Backend: la RPC `complete_own_appointment(UUID)` YA existía en `00003_sync_security_foundations.sql` (SECURITY DEFINER, valida rol worker + `business_id` + `worker_id` + `status='scheduled'` + `is_deleted=false`, GRANT solo a `authenticated`); esa misma migración elimina la política RLS de UPDATE del worker, dejando la RPC como única vía de transición worker→completado. **No se creó migración nueva.**
+  - Móvil (`apps/mobile`): wrapper cliente `completeOwnAppointment(profile, appointmentId)` en `src/appointments/appointmentRepository.ts` que revalida ownership + `canCompleteAppointment` de `@turnos/core` ANTES de tocar red, exige `status==='scheduled'` local, invoca `getSupabaseClient().rpc('complete_own_appointment', ...)` con el token del worker (sin service role) y hace update local optimista a `completed` (server-wins confirma al pull). Sin red lanza `AppointmentOfflineError` (la completación es online por diseño; el worker no tiene push genérico). UI: en la grilla `app/(app)/appointments/index.tsx` las tarjetas `scheduled` del worker son pulsables → `Alert.alert` de confirmación → `completeOwnAppointment` + `syncNow()`; tarjeta con hint "✓ Tocá para completar", tema y patrón de ficha reutilizados; el owner mantiene tap→`[id]` intacto. Copy del hero worker en `home.tsx` actualizado. Detalle `[id].tsx` sigue owner-only.
+  - Verificado: `npx tsc --noEmit` en `apps/mobile` en verde; `npm run build` (4 paquetes OK) y `npm run test` (`@turnos/core` 43 tests) en verde desde la raíz.
+  - _Pendiente asociado (E2E, tarea 13): worker completa turno propio online → RPC aplica `completed` → pull refleja el cambio; rechazo al completar turno ajeno o ya no-`scheduled`; comportamiento sin red. No validado en dispositivo._
   - _R8_
 
 ## Validación end-to-end (requiere dispositivo / destino real)

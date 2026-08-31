@@ -64,7 +64,7 @@ export default function HomeScreen() {
         <Text style={styles.subtitle}>
           {isOwner
             ? 'Gestioná servicios y prepará los datos que usará la agenda diaria.'
-            : 'Tu sesión está lista. La pantalla de agenda de trabajador será el próximo módulo.'}
+            : 'Revisá tu agenda del día y marcá tus turnos como completados.'}
         </Text>
       </View>
 

@@ -16,7 +16,7 @@
 | Auth y onboarding | En código | Email/password, SecureStore, perfil/rol, onboarding owner, sync inicial. Falta validar en development build. |
 | ABM servicios | En código | Owner lista/crea/edita/desactiva/reactiva. Falta E2E contra Supabase y offline en dispositivo. |
 | Sistema de diseño | En código | Tema central (`src/theme`) con paleta cálida, escala tipográfica y espaciado según `steering/design.md`. Fuentes Fraunces/Public Sans locales cargadas con `expo-font`. Todas las pantallas actuales consumen tokens. Falta validar carga de fuentes en development build. |
-| UI restante | Pendiente | Workers, clientes, agenda, cobros, comisiones, dashboard. |
+| UI restante | Parcial | Workers, clientes y agenda diaria en código; la vista worker completa turnos propios vía RPC `complete_own_appointment` (online, no sync genérico). Faltan cobros, comisiones y dashboard. |
 | Release | Parcial | TS, Expo, perfil EAS, assets y migraciones locales verificados. Sin tests, E2E ni binario validado. Upload EAS bloqueado por `403` histórico. |
 
 ## Stack efectivo
