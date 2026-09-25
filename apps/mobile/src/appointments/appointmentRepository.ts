@@ -15,6 +15,21 @@ import { generateUuidV7 } from '../auth/uuid';
 import { database } from '../database';
 import { AppointmentModel, ServiceModel } from '../database/models';
 import { getSupabaseClient, validateSlotEndpoint } from '../lib/supabase';
+import { setAppointmentServices } from './appointmentServiceRepository';
+
+/**
+ * Borrador de turno del rediseño: varios servicios y trabajador OPCIONAL
+ * ("Sin asignar"). La hora de fin se deriva de la suma de duraciones de los
+ * servicios elegidos.
+ */
+export type AppointmentFullDraft = {
+  date: string; // "YYYY-MM-DD"
+  startTime: string; // "HH:mm"
+  serviceIds: string[];
+  workerId?: string; // undefined = sin asignar
+  clientId: string;
+  notes?: string;
+};
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -85,7 +100,7 @@ function deriveEndTime(startTime: string, durationMinutes: number): string {
 
   if (end >= 24 * 60) {
     throw new AppointmentValidationError([
-      'El turno no puede terminar después de la medianoche. Elegí una hora más temprana.',
+      'El turno no puede terminar después de la medianoche. Elige una hora más temprana.',
     ]);
   }
 
@@ -120,15 +135,15 @@ async function normalizeDraft(
   }
 
   if (!draft.serviceId) {
-    errors.push('Elegí un servicio.');
+    errors.push('Elige un servicio.');
   }
 
   if (!draft.workerId) {
-    errors.push('Elegí un profesional.');
+    errors.push('Elige un profesional.');
   }
 
   if (!draft.clientId) {
-    errors.push('Elegí un cliente.');
+    errors.push('Elige un cliente.');
   }
 
   if (errors.length > 0) {
@@ -262,7 +277,7 @@ export async function createAppointment(
       appointment.date = normalized.date;
       appointment.startTime = normalized.startTime;
       appointment.endTime = normalized.endTime;
-      appointment.status = 'scheduled';
+      appointment.status = 'created';
       appointment.serviceId = normalized.serviceId;
       appointment.workerId = normalized.workerId;
       appointment.clientId = normalized.clientId;
@@ -335,7 +350,7 @@ export async function cancelAppointment(
  */
 export class AppointmentOfflineError extends Error {
   constructor() {
-    super('Necesitás conexión para marcar el turno como completado.');
+    super('Necesitas conexión para marcar el turno como completado.');
     this.name = 'AppointmentOfflineError';
   }
 }
@@ -366,10 +381,10 @@ export async function completeOwnAppointment(
   const appointment = await getAppointment(profile, appointmentId);
 
   if (!canCompleteAppointment(profile, toAppointment(appointment))) {
-    throw new Error('No tenés permiso para completar este turno.');
+    throw new Error('No tienes permiso para completar este turno.');
   }
 
-  if (appointment.status !== 'scheduled') {
+  if (appointment.status !== 'created') {
     throw new Error('Solo se pueden completar turnos pendientes.');
   }
 
@@ -396,7 +411,155 @@ export async function completeOwnAppointment(
   return database.write(async () =>
     appointment.update((record) => {
       assertAppointmentBelongsToProfile(record, profile);
-      record.status = 'completed';
+      record.status = 'done';
+      record.updatedAt = Date.now();
+    })
+  );
+}
+
+/**
+ * Crea un turno del modelo del rediseño: varios servicios (tabla puente) y
+ * trabajador opcional. Deriva end_time de la suma de duraciones. Solo owner.
+ * El anti-solapamiento local solo aplica cuando hay trabajador asignado (un
+ * turno "Sin asignar" no compite por la agenda de nadie, igual que el GiST).
+ */
+export async function createAppointmentWithServices(
+  profile: UserProfile,
+  draft: AppointmentFullDraft
+): Promise<AppointmentModel> {
+  assertCanCreate(profile);
+
+  const date = draft.date.trim();
+  const startTime = draft.startTime.trim();
+  const errors: string[] = [];
+  if (!DATE_PATTERN.test(date)) errors.push('La fecha debe tener el formato AAAA-MM-DD.');
+  if (!TIME_PATTERN.test(startTime))
+    errors.push('La hora de inicio debe tener el formato HH:mm.');
+  if (!draft.clientId) errors.push('Elegí un cliente.');
+  if (draft.serviceIds.length === 0) errors.push('Elegí al menos un servicio.');
+  if (errors.length > 0) throw new AppointmentValidationError([...new Set(errors)]);
+
+  // Sumar duraciones de los servicios elegidos.
+  const services = await getServicesCollection()
+    .query(Q.where('business_id', profile.business_id), Q.where('is_deleted', false))
+    .fetch();
+  const byId = new Map(services.map((s) => [s.id, s]));
+  const totalDuration = draft.serviceIds.reduce(
+    (sum, id) => sum + (byId.get(id)?.durationMinutes ?? 0),
+    0
+  );
+  const endTime = deriveEndTime(startTime, totalDuration || 30);
+
+  if (draft.workerId) {
+    await assertNoLocalOverlap(
+      profile,
+      {
+        date,
+        startTime,
+        endTime,
+        serviceId: draft.serviceIds[0],
+        workerId: draft.workerId,
+        clientId: draft.clientId,
+      },
+      undefined
+    );
+  }
+
+  const id = generateUuidV7();
+  const notes = draft.notes?.trim() || undefined;
+
+  const appointment = await database.write(async () =>
+    getAppointmentsCollection().create((record) => {
+      record._raw.id = id;
+      record.businessId = profile.business_id;
+      record.date = date;
+      record.startTime = startTime;
+      record.endTime = endTime;
+      record.status = 'created';
+      record.serviceId = draft.serviceIds[0]; // compat legacy
+      record.workerId = draft.workerId;
+      record.clientId = draft.clientId;
+      record.notes = notes;
+      record.isDeleted = false;
+      record.updatedAt = Date.now();
+      record.syncVersion = 0;
+    })
+  );
+
+  await setAppointmentServices(profile, id, draft.serviceIds);
+  return appointment;
+}
+
+/** Actualiza un turno multi-servicio (owner). Reemplaza el set de servicios. */
+export async function updateAppointmentWithServices(
+  profile: UserProfile,
+  appointmentId: string,
+  draft: AppointmentFullDraft
+): Promise<AppointmentModel> {
+  const appointment = await getAppointment(profile, appointmentId);
+  if (!canEditAppointment(profile, toAppointment(appointment))) {
+    throw new Error('Solo la cuenta owner puede editar turnos.');
+  }
+
+  const date = draft.date.trim();
+  const startTime = draft.startTime.trim();
+  const services = await getServicesCollection()
+    .query(Q.where('business_id', profile.business_id), Q.where('is_deleted', false))
+    .fetch();
+  const byId = new Map(services.map((s) => [s.id, s]));
+  const totalDuration = draft.serviceIds.reduce(
+    (sum, id) => sum + (byId.get(id)?.durationMinutes ?? 0),
+    0
+  );
+  const endTime = deriveEndTime(startTime, totalDuration || 30);
+
+  if (draft.workerId) {
+    await assertNoLocalOverlap(
+      profile,
+      {
+        date,
+        startTime,
+        endTime,
+        serviceId: draft.serviceIds[0] ?? '',
+        workerId: draft.workerId,
+        clientId: draft.clientId,
+      },
+      appointmentId
+    );
+  }
+
+  await database.write(async () =>
+    appointment.update((record) => {
+      assertAppointmentBelongsToProfile(record, profile);
+      record.date = date;
+      record.startTime = startTime;
+      record.endTime = endTime;
+      record.serviceId = draft.serviceIds[0];
+      record.workerId = draft.workerId;
+      record.clientId = draft.clientId;
+      record.notes = draft.notes?.trim() || undefined;
+      record.updatedAt = Date.now();
+    })
+  );
+
+  await setAppointmentServices(profile, appointmentId, draft.serviceIds);
+  return appointment;
+}
+
+/** Cambia el estado de un turno (owner). Para el chip-group de la pantalla editar. */
+export async function setAppointmentStatus(
+  profile: UserProfile,
+  appointmentId: string,
+  status: AppointmentStatus
+): Promise<AppointmentModel> {
+  const appointment = await getAppointment(profile, appointmentId);
+  if (!canEditAppointment(profile, toAppointment(appointment))) {
+    throw new Error('Solo la cuenta owner puede editar turnos.');
+  }
+  return database.write(async () =>
+    appointment.update((record) => {
+      assertAppointmentBelongsToProfile(record, profile);
+      record.status = status;
       record.updatedAt = Date.now();
     })
   );

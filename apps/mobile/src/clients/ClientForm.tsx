@@ -60,7 +60,7 @@ export function ClientForm({ initialValue, submitLabel, onSubmit }: ClientFormPr
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Text style={styles.helper}>
-            El nombre es lo único obligatorio. Sumá teléfono y notas si te sirven para el día a día.
+            El nombre es lo único obligatorio. Agrega teléfono y notas si te sirven para el día a día.
           </Text>
 
           <Text style={styles.label}>Nombre</Text>

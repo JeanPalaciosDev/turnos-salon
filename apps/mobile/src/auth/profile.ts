@@ -61,7 +61,7 @@ function normalizeBusinessName(value: string): string {
   const name = value.trim();
 
   if (!name) {
-    throw new Error('Ingresá el nombre del salón.');
+    throw new Error('Ingresa el nombre del salón.');
   }
 
   return name;
@@ -81,7 +81,7 @@ function normalizeTimezone(value: string): string {
   const timezone = value.trim();
 
   if (!timezone) {
-    throw new Error('Ingresá una zona horaria IANA, por ejemplo America/Argentina/Buenos_Aires.');
+    throw new Error('Ingresa una zona horaria IANA, por ejemplo America/Argentina/Buenos_Aires.');
   }
 
   return timezone;

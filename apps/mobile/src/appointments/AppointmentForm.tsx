@@ -12,15 +12,11 @@ import {
 } from 'react-native';
 
 import { colors, radius, shadow, spacing, typography } from '../theme';
+import { OptionPicker, type OptionItem } from '../components/OptionPicker';
 
 import type { AppointmentDraft } from './appointmentRepository';
 
-export type OptionItem = {
-  id: string;
-  label: string;
-  /** Metadato opcional (por ejemplo, duración del servicio). */
-  hint?: string;
-};
+export type { OptionItem };
 
 type AppointmentFormProps = {
   initialValue: AppointmentDraft;
@@ -103,7 +99,7 @@ export function AppointmentForm({
         <View style={styles.card}>
           {missingData ? (
             <Text style={styles.helper}>
-              Para agendar necesitás al menos un servicio, un profesional y un cliente cargados.
+              Para agendar necesitas al menos un servicio, un profesional y un cliente cargados.
             </Text>
           ) : (
             <Text style={styles.helper}>
@@ -172,45 +168,6 @@ export function AppointmentForm({
   );
 }
 
-type OptionPickerProps = {
-  items: OptionItem[];
-  selectedId: string;
-  emptyLabel: string;
-  onSelect: (id: string) => void;
-};
-
-/** Selector simple táctil (chips). Evita agregar una lib de picker nueva. */
-function OptionPicker({ items, selectedId, emptyLabel, onSelect }: OptionPickerProps) {
-  if (items.length === 0) {
-    return <Text style={styles.emptyOption}>{emptyLabel}</Text>;
-  }
-
-  return (
-    <View style={styles.optionList}>
-      {items.map((item) => {
-        const isSelected = item.id === selectedId;
-
-        return (
-          <Pressable
-            key={item.id}
-            onPress={() => onSelect(item.id)}
-            style={[styles.option, isSelected && styles.optionSelected]}
-          >
-            <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-              {item.label}
-            </Text>
-            {item.hint ? (
-              <Text style={[styles.optionHint, isSelected && styles.optionTextSelected]}>
-                {item.hint}
-              </Text>
-            ) : null}
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -251,38 +208,6 @@ const styles = StyleSheet.create({
   notesInput: {
     minHeight: 72,
     textAlignVertical: 'top',
-  },
-  optionList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  option: {
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: radius.control,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  optionSelected: {
-    borderColor: colors.brandPrimary,
-    backgroundColor: colors.brandSoft,
-  },
-  optionText: {
-    color: colors.textSecondary,
-    ...typography.bodyStrong,
-    fontSize: 14,
-  },
-  optionHint: {
-    color: colors.textMuted,
-    ...typography.micro,
-  },
-  optionTextSelected: {
-    color: colors.brandPrimary,
-  },
-  emptyOption: {
-    color: colors.textMuted,
-    ...typography.body,
   },
   error: {
     color: colors.status.cancelled.border,

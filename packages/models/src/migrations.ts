@@ -24,11 +24,29 @@ export type MigrationStep =
  */
 export const migrations: Migration[] = [
   // La versión 1 es el schema base, no requiere migración.
-  // Ejemplo para versión futura:
-  // {
-  //   toVersion: 2,
-  //   steps: [
-  //     { type: 'add_columns', table: 'appointments', columns: [{ name: 'recurring_id', type: 'string', isOptional: true }] }
-  //   ],
-  // },
+  {
+    // v2 (2026-09): modelo de dominio del rediseño (SQL: migración 00010).
+    // Tabla puente de servicios múltiples + campos nuevos. worker_id/service_id
+    // pasan a opcionales, pero WatermelonDB no distingue optional en columnas ya
+    // existentes (es solo validación de escritura), así que no requieren step.
+    toVersion: 2,
+    steps: [
+      { type: 'create_table', name: 'appointment_services' },
+      {
+        type: 'add_columns',
+        table: 'services',
+        columns: [{ name: 'reapplication_days', type: 'number', isOptional: true }],
+      },
+      {
+        type: 'add_columns',
+        table: 'workers',
+        columns: [{ name: 'phone', type: 'string', isOptional: true }],
+      },
+      {
+        type: 'add_columns',
+        table: 'clients',
+        columns: [{ name: 'last_visit', type: 'string', isOptional: true }],
+      },
+    ],
+  },
 ];

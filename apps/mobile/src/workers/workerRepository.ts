@@ -17,6 +17,8 @@ export type WorkerDraft = {
    * para satisfacer el CHECK workers_commission_currency_consistent del servidor.
    */
   commissionCurrency?: string;
+  /** Teléfono del trabajador (diseño). Opcional. */
+  phone?: string;
 };
 
 export class WorkerValidationError extends Error {
@@ -76,6 +78,7 @@ function normalizeDraft(draft: WorkerDraft): WorkerDraft {
     commissionType,
     commissionValue,
     commissionCurrency,
+    phone: draft.phone?.trim() ? draft.phone.trim() : undefined,
   };
 }
 
@@ -90,6 +93,7 @@ function assignEditableFields(worker: WorkerModel, draft: WorkerDraft): void {
   worker.commissionType = draft.commissionType;
   worker.commissionValue = draft.commissionValue;
   worker.commissionCurrency = draft.commissionCurrency;
+  worker.phone = draft.phone;
   worker.updatedAt = Date.now();
 }
 
@@ -134,6 +138,7 @@ export async function createWorker(
       worker.commissionType = normalized.commissionType;
       worker.commissionValue = normalized.commissionValue;
       worker.commissionCurrency = normalized.commissionCurrency;
+      worker.phone = normalized.phone;
       worker.isActive = true;
       worker.isDeleted = false;
       worker.updatedAt = Date.now();

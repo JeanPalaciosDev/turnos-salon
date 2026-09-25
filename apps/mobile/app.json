@@ -24,6 +24,10 @@
       "package": "com.turnossalon.app"
     },
     "scheme": "turnos-salon",
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
     "plugins": [
       "expo-router",
       "expo-font",

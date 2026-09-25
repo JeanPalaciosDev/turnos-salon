@@ -41,7 +41,7 @@ const appointmentDeW1: Appointment = {
   date: '2025-03-15',
   start_time: '10:00',
   end_time: '10:30',
-  status: 'scheduled',
+  status: 'created',
   service_id: 's1',
   worker_id: 'w1',
   client_id: 'c1',

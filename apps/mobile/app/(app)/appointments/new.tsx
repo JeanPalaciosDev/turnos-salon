@@ -1,130 +1,141 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { Redirect, router } from 'expo-router';
-import { canCreateAppointment } from '@turnos/core';
+import { useEffect, useState } from 'react';
+import { ScrollView, View } from 'react-native';
+import { router } from 'expo-router';
 
 import { useAuth } from '../../../src/auth/AuthProvider';
-import { AppointmentForm, type OptionItem } from '../../../src/appointments/AppointmentForm';
 import {
-  type AppointmentDraft,
-  createAppointment,
+  AppointmentValidationError,
+  AppointmentOverlapError,
+  createAppointmentWithServices,
 } from '../../../src/appointments/appointmentRepository';
-import { database } from '../../../src/database';
-import { ClientModel, ServiceModel, WorkerModel } from '../../../src/database/models';
-import { colors, spacing, typography } from '../../../src/theme';
+import {
+  resetAppointmentDraft,
+  useAppointmentDraft,
+} from '../../../src/appointments/appointmentDraft';
+import { AppScreen } from '../../../src/components/AppScreen';
+import { Button } from '../../../src/components/atoms';
+import {
+  FormFooter,
+  FormGroup,
+  FormHeaderRow,
+  FormHint,
+  FormLabel,
+  FormSelect,
+} from '../../../src/components/forms';
+import { createStyles } from '../../../src/theme';
 
-function todayIso(): string {
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, '0');
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
+/** Pantalla 13 — Turno, Nuevo (§8.7). Los campos abren modales que llenan el borrador. */
+export default function AppointmentNewScreen() {
+  const { profile, syncNow } = useAuth();
+  const draft = useAppointmentDraft();
+  const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [initialized, setInitialized] = useState(false);
+  const styles = useStyles();
 
-export default function NewAppointmentScreen() {
-  const { profile, status, syncNow } = useAuth();
-  const [services, setServices] = useState<OptionItem[]>([]);
-  const [workers, setWorkers] = useState<OptionItem[]>([]);
-  const [clients, setClients] = useState<OptionItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const canManage = Boolean(profile && canCreateAppointment(profile));
-
+  // Al abrir un turno nuevo, empezar con el borrador limpio (una sola vez).
   useEffect(() => {
-    if (!profile || !canManage) {
-      return;
+    if (!initialized) {
+      resetAppointmentDraft();
+      setInitialized(true);
     }
+  }, [initialized]);
 
-    let isMounted = true;
-
-    void (async () => {
-      const [serviceRecords, workerRecords, clientRecords] = await Promise.all([
-        database.get<ServiceModel>('services').query().fetch(),
-        database.get<WorkerModel>('workers').query().fetch(),
-        database.get<ClientModel>('clients').query().fetch(),
-      ]);
-
-      if (!isMounted) {
-        return;
-      }
-
-      setServices(
-        serviceRecords
-          .filter((s) => s.businessId === profile.business_id && !s.isDeleted && s.isActive)
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map((s) => ({ id: s.id, label: s.name, hint: `${s.durationMinutes} min` }))
-      );
-      setWorkers(
-        workerRecords
-          .filter((w) => w.businessId === profile.business_id && !w.isDeleted && w.isActive)
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map((w) => ({ id: w.id, label: w.name }))
-      );
-      setClients(
-        clientRecords
-          .filter((c) => c.businessId === profile.business_id && !c.isDeleted)
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map((c) => ({ id: c.id, label: c.name }))
-      );
-      setIsLoading(false);
-    })();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [canManage, profile]);
-
-  const initialValue = useMemo<AppointmentDraft>(
-    () => ({
-      date: todayIso(),
-      startTime: '09:00',
-      serviceId: services[0]?.id ?? '',
-      workerId: workers[0]?.id ?? '',
-      clientId: clients[0]?.id ?? '',
-    }),
-    [services, workers, clients]
-  );
-
-  if (status !== 'ready' || !profile || !canManage) {
-    return <Redirect href="/home" />;
-  }
-
-  if (isLoading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator color={colors.brandPrimary} />
-        <Text style={styles.loadingText}>Preparando formulario…</Text>
-      </View>
-    );
-  }
-
-  const handleSubmit = async (draft: AppointmentDraft) => {
-    await createAppointment(profile, draft);
-    await syncNow();
-    router.replace('/appointments');
+  const onSave = async () => {
+    if (!profile) return;
+    setBusy(true);
+    setErrors([]);
+    try {
+      await createAppointmentWithServices(profile, {
+        date: draft.date ?? '',
+        startTime: draft.time ?? '',
+        serviceIds: draft.serviceIds,
+        workerId: draft.workerId,
+        clientId: draft.clientId ?? '',
+      });
+      await syncNow();
+      resetAppointmentDraft();
+      router.replace('/(app)/agenda');
+    } catch (e) {
+      if (e instanceof AppointmentValidationError) setErrors(e.messages);
+      else if (e instanceof AppointmentOverlapError) setErrors([e.message]);
+      else setErrors([e instanceof Error ? e.message : 'No se pudo guardar el turno.']);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
-    <AppointmentForm
-      initialValue={initialValue}
-      services={services}
-      workers={workers}
-      clients={clients}
-      onSubmit={handleSubmit}
-      submitLabel="Crear cita"
-    />
+    <AppScreen header={false}>
+      <FormHeaderRow title="Nuevo turno" onBack={() => router.back()} />
+      <ScrollView contentContainerStyle={styles.body}>
+        <FormGroup>
+          <FormLabel label="Cliente" required />
+          <FormSelect
+            value={draft.clientName ?? ''}
+            placeholder="Elegir cliente"
+            onPress={() => router.push('/(app)/appointments/pick-client')}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <FormLabel label="Trabajador" />
+          <FormSelect
+            value={draft.workerName ?? ''}
+            placeholder="Sin asignar"
+            onPress={() => router.push('/(app)/appointments/pick-worker')}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <FormLabel label="Servicios" required />
+          <FormSelect
+            value={draft.serviceNames.join(', ')}
+            placeholder="Elegir servicios"
+            onPress={() => router.push('/(app)/appointments/pick-services')}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <FormLabel label="Fecha" required />
+          <FormSelect
+            value={draft.date ?? ''}
+            placeholder="Elegir fecha"
+            onPress={() => router.push('/(app)/appointments/pick-date')}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <FormLabel label="Hora" required />
+          <FormSelect
+            value={draft.time ?? ''}
+            placeholder="Elegir hora"
+            onPress={() => router.push('/(app)/appointments/pick-time')}
+          />
+        </FormGroup>
+
+        <FormHint text="El turno se crea con estado Creado. No se permiten fechas anteriores a hoy." />
+        {errors.map((msg) => (
+          <FormHint key={msg} text={msg} variant="error" />
+        ))}
+      </ScrollView>
+
+      <View style={styles.footerWrap}>
+        <FormFooter>
+          <Button
+            variant="primary"
+            label={busy ? 'Guardando…' : 'Guardar turno'}
+            onPress={() => void onSave()}
+            disabled={busy || !profile}
+          />
+          <Button variant="secondary" label="Cancelar" onPress={() => router.back()} />
+        </FormFooter>
+      </View>
+    </AppScreen>
   );
 }
 
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.bgBase,
-  },
-  loadingText: {
-    color: colors.textSecondary,
-    ...typography.body,
-    fontSize: 15,
-  },
-});
+const useStyles = createStyles((t) => ({
+  body: { padding: t.spacing.xl, gap: t.spacing.xs },
+  footerWrap: { paddingBottom: t.spacing.lg },
+}));

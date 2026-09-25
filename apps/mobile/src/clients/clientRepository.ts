@@ -10,6 +10,8 @@ export type ClientDraft = {
   name: string;
   phone?: string;
   notes?: string;
+  /** Última visita (diseño), ISO "YYYY-MM-DD". Opcional. */
+  lastVisit?: string;
 };
 
 export class ClientValidationError extends Error {
@@ -45,6 +47,7 @@ function normalizeDraft(draft: ClientDraft): ClientDraft {
     // Los campos opcionales vacíos viajan como undefined para no persistir cadenas vacías.
     phone: phone && phone.length > 0 ? phone : undefined,
     notes: notes && notes.length > 0 ? notes : undefined,
+    lastVisit: draft.lastVisit?.trim() ? draft.lastVisit.trim() : undefined,
   };
 }
 
@@ -58,6 +61,7 @@ function assignEditableFields(client: ClientModel, draft: ClientDraft): void {
   client.name = draft.name;
   client.phone = draft.phone;
   client.notes = draft.notes;
+  client.lastVisit = draft.lastVisit;
   client.updatedAt = Date.now();
 }
 
@@ -114,6 +118,7 @@ export async function createClient(
       client.name = normalized.name;
       client.phone = normalized.phone;
       client.notes = normalized.notes;
+      client.lastVisit = normalized.lastVisit;
       client.isDeleted = false;
       client.updatedAt = Date.now();
       // El servidor reemplaza este valor por su cursor autoritativo en el primer pull.

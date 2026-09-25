@@ -66,7 +66,18 @@ export type Client = {
   is_deleted: boolean;
 };
 
-export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show';
+/**
+ * Estados de cita del modelo del rediseño (2026-09, migración 00010):
+ * created (Creado), pending (Pendiente), in_progress (En curso),
+ * done (Finalizado), no_show (Ausente), cancelled (Cancelado).
+ */
+export type AppointmentStatus =
+  | 'created'
+  | 'pending'
+  | 'in_progress'
+  | 'done'
+  | 'no_show'
+  | 'cancelled';
 
 export type Appointment = {
   id: string;
@@ -75,8 +86,10 @@ export type Appointment = {
   start_time: string; // "14:30"
   end_time: string; // "15:00"
   status: AppointmentStatus;
-  service_id: string;
-  worker_id: string;
+  /** Opcional: la fuente de verdad de servicios es la tabla puente. */
+  service_id?: string;
+  /** Opcional: turnos "Sin asignar". */
+  worker_id?: string;
   client_id: string;
   notes?: string;
   updated_at: number;

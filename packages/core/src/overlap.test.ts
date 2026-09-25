@@ -47,8 +47,8 @@ describe('hasTimeOverlap', () => {
 
 describe('validateNoOverlap', () => {
   const base = [
-    { id: 'a', start_time: '09:00', end_time: '10:00', status: 'scheduled' as const },
-    { id: 'b', start_time: '11:00', end_time: '12:00', status: 'scheduled' as const },
+    { id: 'a', start_time: '09:00', end_time: '10:00', status: 'created' as const },
+    { id: 'b', start_time: '11:00', end_time: '12:00', status: 'created' as const },
   ];
 
   it('retorna vacío cuando no hay conflictos', () => {
@@ -77,8 +77,8 @@ describe('validateNoOverlap', () => {
 
   it('detecta múltiples conflictos', () => {
     const packed = [
-      { id: 'x', start_time: '10:00', end_time: '11:00', status: 'scheduled' as const },
-      { id: 'y', start_time: '10:45', end_time: '11:45', status: 'completed' as const },
+      { id: 'x', start_time: '10:00', end_time: '11:00', status: 'created' as const },
+      { id: 'y', start_time: '10:45', end_time: '11:45', status: 'done' as const },
     ];
     const result = validateNoOverlap(packed, { start_time: '10:30', end_time: '11:15' });
     expect(result.map((r) => r.id).sort()).toEqual(['x', 'y']);

@@ -11,6 +11,8 @@ export type ServiceDraft = {
   durationMinutes: number;
   defaultPriceAmount: number;
   defaultPriceCurrency: string;
+  /** Plazo de reaplicación en días (diseño). Opcional. */
+  reapplicationDays?: number;
 };
 
 export class ServiceValidationError extends Error {
@@ -36,6 +38,12 @@ function normalizeDraft(draft: ServiceDraft): ServiceDraft {
     durationMinutes: draft.durationMinutes,
     defaultPriceAmount: draft.defaultPriceAmount,
     defaultPriceCurrency: draft.defaultPriceCurrency.trim().toUpperCase(),
+    reapplicationDays:
+      draft.reapplicationDays !== undefined &&
+      Number.isSafeInteger(draft.reapplicationDays) &&
+      draft.reapplicationDays >= 0
+        ? draft.reapplicationDays
+        : undefined,
   };
   const errors = validateService({
     name: normalized.name,
@@ -73,6 +81,7 @@ function assignEditableFields(service: ServiceModel, draft: ServiceDraft): void 
   service.durationMinutes = draft.durationMinutes;
   service.defaultPriceAmount = draft.defaultPriceAmount;
   service.defaultPriceCurrency = draft.defaultPriceCurrency;
+  service.reapplicationDays = draft.reapplicationDays;
   service.updatedAt = Date.now();
 }
 
@@ -128,6 +137,7 @@ export async function createService(
       service.defaultPriceAmount = normalized.defaultPriceAmount;
       service.defaultPriceCurrency = normalized.defaultPriceCurrency;
       service.isActive = true;
+      service.reapplicationDays = normalized.reapplicationDays;
       service.isDeleted = false;
       service.updatedAt = Date.now();
       // El servidor reemplaza este valor por su cursor autoritativo en el primer pull.

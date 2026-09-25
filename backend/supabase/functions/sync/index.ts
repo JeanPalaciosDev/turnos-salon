@@ -13,6 +13,7 @@ const TABLE_NAMES = [
   'workers',
   'clients',
   'appointments',
+  'appointment_services',
   'payments',
 ] as const;
 

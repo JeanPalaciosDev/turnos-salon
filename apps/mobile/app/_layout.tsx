@@ -2,9 +2,11 @@ import { DatabaseProvider } from '@nozbe/watermelondb/react';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '../src/auth/AuthProvider';
 import { database } from '../src/database';
+import { ThemeProvider } from '../src/theme';
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -22,16 +24,20 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <DatabaseProvider database={database}>
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(onboarding)" />
-          <Stack.Screen name="(app)" />
-        </Stack>
-      </DatabaseProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <DatabaseProvider database={database}>
+            <StatusBar style="dark" />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(app)" />
+              <Stack.Screen name="(dev)" />
+            </Stack>
+          </DatabaseProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

@@ -3,31 +3,35 @@ import type { AppointmentStatus } from '@turnos/core';
 import { colors, type StatusKey } from '../theme';
 
 /**
- * Mapea el estado de dominio (AppointmentStatus) a la clave de color del tema.
- * El modelo de datos usa 'scheduled' como estado inicial; el diseño lo representa
- * como "Pendiente" (terracota) hasta que se confirme/complete. 'confirmed' y
- * 'active' no existen aún como estados del modelo, pero el tema los prevé.
+ * Mapea el estado de dominio (AppointmentStatus, 6 estados del rediseño) a la
+ * clave de color del tema (StatusKey).
  */
 const STATUS_TO_COLOR: Record<AppointmentStatus, StatusKey> = {
-  scheduled: 'pending',
-  completed: 'done',
-  cancelled: 'cancelled',
+  created: 'active',
+  pending: 'pending',
+  in_progress: 'active',
+  done: 'done',
   no_show: 'noshow',
+  cancelled: 'cancelled',
 };
 
 const STATUS_LABEL: Record<AppointmentStatus, string> = {
-  scheduled: 'Pendiente',
-  completed: 'Completada',
-  cancelled: 'Cancelada',
-  no_show: 'No-show',
+  created: 'Creado',
+  pending: 'Pendiente',
+  in_progress: 'En curso',
+  done: 'Finalizado',
+  no_show: 'Ausente',
+  cancelled: 'Cancelado',
 };
 
 /** Ícono textual para no depender solo del color (accesibilidad, daltonismo). */
 const STATUS_ICON: Record<AppointmentStatus, string> = {
-  scheduled: '⏱',
-  completed: '✓',
-  cancelled: '✕',
+  created: '⏱',
+  pending: '⏱',
+  in_progress: '●',
+  done: '✓',
   no_show: '⃠',
+  cancelled: '✕',
 };
 
 export function statusColors(status: AppointmentStatus): { border: string; bg: string } {

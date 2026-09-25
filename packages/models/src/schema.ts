@@ -13,6 +13,7 @@ export const TABLES = {
   WORKERS: 'workers',
   CLIENTS: 'clients',
   APPOINTMENTS: 'appointments',
+  APPOINTMENT_SERVICES: 'appointment_services',
   PAYMENTS: 'payments',
 } as const;
 
@@ -20,8 +21,10 @@ export type TableName = (typeof TABLES)[keyof typeof TABLES];
 
 /**
  * Schema version — incrementar con cada migración.
+ * v2 (2026-09): modelo de dominio del rediseño (migración 00010) — tabla puente
+ * appointment_services, worker_id opcional, campos nuevos.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /**
  * Definición del schema para WatermelonDB.
@@ -60,6 +63,7 @@ export const schemaDefinition = {
         { name: 'default_price_amount', type: 'number' as const },
         { name: 'default_price_currency', type: 'string' as const },
         { name: 'is_active', type: 'boolean' as const },
+        { name: 'reapplication_days', type: 'number' as const, isOptional: true },
         { name: 'updated_at', type: 'number' as const },
         { name: 'sync_version', type: 'number' as const },
         { name: 'is_deleted', type: 'boolean' as const },
@@ -72,6 +76,7 @@ export const schemaDefinition = {
         { name: 'commission_type', type: 'string' as const },
         { name: 'commission_value', type: 'number' as const },
         { name: 'commission_currency', type: 'string' as const, isOptional: true },
+        { name: 'phone', type: 'string' as const, isOptional: true },
         { name: 'is_active', type: 'boolean' as const },
         { name: 'updated_at', type: 'number' as const },
         { name: 'sync_version', type: 'number' as const },
@@ -84,6 +89,7 @@ export const schemaDefinition = {
         { name: 'name', type: 'string' as const },
         { name: 'phone', type: 'string' as const, isOptional: true },
         { name: 'notes', type: 'string' as const, isOptional: true },
+        { name: 'last_visit', type: 'string' as const, isOptional: true },
         { name: 'updated_at', type: 'number' as const },
         { name: 'sync_version', type: 'number' as const },
         { name: 'is_deleted', type: 'boolean' as const },
@@ -96,10 +102,26 @@ export const schemaDefinition = {
         { name: 'start_time', type: 'string' as const },
         { name: 'end_time', type: 'string' as const },
         { name: 'status', type: 'string' as const },
-        { name: 'service_id', type: 'string' as const },
-        { name: 'worker_id', type: 'string' as const },
+        // service_id opcional: la fuente de verdad de servicios pasa a la tabla
+        // puente appointment_services (varios servicios por turno).
+        { name: 'service_id', type: 'string' as const, isOptional: true },
+        // worker_id opcional: turnos "Sin asignar".
+        { name: 'worker_id', type: 'string' as const, isOptional: true },
         { name: 'client_id', type: 'string' as const },
         { name: 'notes', type: 'string' as const, isOptional: true },
+        { name: 'updated_at', type: 'number' as const },
+        { name: 'sync_version', type: 'number' as const },
+        { name: 'is_deleted', type: 'boolean' as const },
+      ],
+    },
+    [TABLES.APPOINTMENT_SERVICES]: {
+      columns: [
+        { name: 'business_id', type: 'string' as const },
+        { name: 'appointment_id', type: 'string' as const },
+        { name: 'service_id', type: 'string' as const },
+        { name: 'duration_minutes', type: 'number' as const, isOptional: true },
+        { name: 'price_amount', type: 'number' as const, isOptional: true },
+        { name: 'price_currency', type: 'string' as const, isOptional: true },
         { name: 'updated_at', type: 'number' as const },
         { name: 'sync_version', type: 'number' as const },
         { name: 'is_deleted', type: 'boolean' as const },

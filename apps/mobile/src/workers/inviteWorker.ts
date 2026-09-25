@@ -17,7 +17,7 @@ function normalizeEmail(value: string): string {
 
   // Validación mínima de forma; el servidor (GoTrue) es la autoridad real.
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new Error('Ingresá un email válido para invitar al trabajador.');
+    throw new Error('Ingresa un email válido para invitar al trabajador.');
   }
 
   return email;

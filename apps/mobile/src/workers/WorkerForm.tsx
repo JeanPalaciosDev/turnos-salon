@@ -82,7 +82,7 @@ export function WorkerForm({ initialValue, submitLabel, onSubmit }: WorkerFormPr
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Text style={styles.helper}>
-            Definí cómo cobra su comisión. Un porcentaje va de 0 a 100; un monto fijo se guarda en
+            Define cómo cobra su comisión. Un porcentaje va de 0 a 100; un monto fijo se guarda en
             la unidad mínima (por ejemplo, 5000 representa $50,00).
           </Text>
 
