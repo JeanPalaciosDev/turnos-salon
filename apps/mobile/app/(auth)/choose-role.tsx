@@ -27,7 +27,7 @@ export default function ChooseRoleScreen() {
             <Text style={styles.cardIcon}>🏠</Text>
             <Text style={styles.cardTitle}>Soy dueño de un salón</Text>
             <Text style={styles.cardSubtitle}>
-              Creá tu salón, sumá trabajadores y gestioná la agenda.
+              Crea tu salón, agrega trabajadores y gestiona la agenda.
             </Text>
           </Pressable>
 
@@ -39,7 +39,7 @@ export default function ChooseRoleScreen() {
             <Text style={styles.cardIcon}>✂️</Text>
             <Text style={styles.cardTitle}>Soy profesional</Text>
             <Text style={styles.cardSubtitle}>
-              Ingresá el código que te dio el dueño del salón para vincularte.
+              Ingresa el código que te dio el dueño del salón para vincularte.
             </Text>
           </Pressable>
         </View>

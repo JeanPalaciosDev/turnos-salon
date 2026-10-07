@@ -435,8 +435,8 @@ export async function createAppointmentWithServices(
   if (!DATE_PATTERN.test(date)) errors.push('La fecha debe tener el formato AAAA-MM-DD.');
   if (!TIME_PATTERN.test(startTime))
     errors.push('La hora de inicio debe tener el formato HH:mm.');
-  if (!draft.clientId) errors.push('Elegí un cliente.');
-  if (draft.serviceIds.length === 0) errors.push('Elegí al menos un servicio.');
+  if (!draft.clientId) errors.push('Elige un cliente.');
+  if (draft.serviceIds.length === 0) errors.push('Elige al menos un servicio.');
   if (errors.length > 0) throw new AppointmentValidationError([...new Set(errors)]);
 
   // Sumar duraciones de los servicios elegidos.

@@ -91,7 +91,7 @@ export default function WorkerEditScreen() {
           <FormInput
             value={phone}
             onChangeText={setPhone}
-            placeholder="+598 99 000 000"
+            placeholder="Ej. 11 2345 6789"
             keyboardType="phone-pad"
           />
         </FormGroup>

@@ -29,7 +29,7 @@ export default function ServiceDeleteModal() {
     <ConfirmModal
       visible
       title="¿Eliminar servicio?"
-      message="El servicio quedará inactivo. Podés reactivarlo luego."
+      message="El servicio quedará inactivo. Puedes reactivarlo luego."
       confirmLabel={busy ? 'Eliminando…' : 'Eliminar'}
       cancelLabel="Cancelar"
       onConfirm={() => void onConfirm()}

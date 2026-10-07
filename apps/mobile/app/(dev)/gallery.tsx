@@ -154,11 +154,11 @@ export default function GalleryScreen() {
       <Section title="Formularios">
         <FormGroup>
           <FormLabel label="Campo requerido" required />
-          <FormInput value={text} onChangeText={setText} placeholder="Escribí algo" />
+          <FormInput value={text} onChangeText={setText} placeholder="Escribe algo" />
         </FormGroup>
         <FormGroup>
           <FormLabel label="Campo opcional" optional />
-          <FormHint text="Tocá el campo para ver el estado focus (borde accentWarm)." />
+          <FormHint text="Toca el campo para ver el estado focus (borde accentWarm)." />
         </FormGroup>
         <FormLabel label="Duración" />
         <DurationField hours={hours} minutes={minutes} onHoursChange={setHours} onMinutesChange={setMinutes} />
@@ -295,7 +295,7 @@ export default function GalleryScreen() {
         onCancel={() => setConfirmOpen(false)}
       />
       <ModalPanel visible={panelOpen} onClose={() => setPanelOpen(false)}>
-        <PickerModalHeader title="Calendario" subtitle="Elegí una fecha" onClose={() => setPanelOpen(false)} />
+        <PickerModalHeader title="Calendario" subtitle="Elige una fecha" onClose={() => setPanelOpen(false)} />
         <Calendar onSelect={() => {}} onCancel={() => setPanelOpen(false)} onConfirm={() => setPanelOpen(false)} />
       </ModalPanel>
     </ScrollView>

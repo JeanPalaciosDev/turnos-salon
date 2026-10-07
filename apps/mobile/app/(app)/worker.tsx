@@ -87,7 +87,7 @@ export default function WorkerHomeScreen() {
           </>
         ) : (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No tenés turnos para hoy.</Text>
+            <Text style={styles.emptyText}>No tienes turnos para hoy.</Text>
           </View>
         )}
       </View>

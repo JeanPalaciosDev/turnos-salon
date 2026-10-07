@@ -50,7 +50,7 @@ export async function inviteWorker(
   const status = (data as { status?: string } | null)?.status;
 
   if (status !== 'invited') {
-    throw new Error('La invitación no se pudo completar. Intentá nuevamente.');
+    throw new Error('La invitación no se pudo completar. Inténtalo nuevamente.');
   }
 
   return { status: 'invited', workerId: input.workerId };

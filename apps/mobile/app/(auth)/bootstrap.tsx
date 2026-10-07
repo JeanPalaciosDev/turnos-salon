@@ -71,7 +71,7 @@ export default function BootstrapScreen() {
   return (
     <AppScreen header={false}>
       <ScrollView contentContainerStyle={styles.body}>
-        <BrandBlock tagline="Configurá tu salón" />
+        <BrandBlock tagline="Configura tu salón" />
 
         <FormGroup>
           <FormLabel label="Nombre del salón" required />

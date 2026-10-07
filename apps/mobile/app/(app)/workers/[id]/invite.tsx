@@ -85,7 +85,7 @@ export default function WorkerInviteScreen() {
         {result && !expired ? (
           <>
             <Text style={styles.instruction}>
-              Compartí este código con el profesional. Válido por {seconds} segundo{seconds !== 1 ? 's' : ''}.
+              Comparte este código con el profesional. Válido por {seconds} segundo{seconds !== 1 ? 's' : ''}.
             </Text>
 
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -107,7 +107,7 @@ export default function WorkerInviteScreen() {
             <Text style={styles.expiredIcon}>⏱</Text>
             <Text style={styles.expiredText}>El código expiró</Text>
             <Text style={styles.expiredSub}>
-              Generá uno nuevo para que el profesional pueda vincularse.
+              Genera uno nuevo para que el profesional pueda vincularse.
             </Text>
           </View>
         ) : null}

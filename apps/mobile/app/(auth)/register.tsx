@@ -31,7 +31,7 @@ export default function RegisterScreen() {
     try {
       const { requiresEmailConfirmation } = await signUp(email, password);
       if (requiresEmailConfirmation) {
-        setNotice('Revisá tu email para confirmar la cuenta y luego ingresá.');
+        setNotice('Revisa tu correo para confirmar la cuenta y luego inicia sesión.');
       } else {
         router.replace('/');
       }
@@ -85,7 +85,7 @@ export default function RegisterScreen() {
             <FormInput
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              placeholder="Repetí tu contraseña"
+              placeholder="Repite tu contraseña"
               secureTextEntry
             />
           </FormGroup>

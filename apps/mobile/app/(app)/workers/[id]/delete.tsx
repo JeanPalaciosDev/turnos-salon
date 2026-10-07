@@ -26,7 +26,7 @@ export default function WorkerDeleteModal() {
     <ConfirmModal
       visible
       title="¿Eliminar trabajador?"
-      message="El trabajador quedará inactivo. Podés reactivarlo luego."
+      message="El trabajador quedará inactivo. Puedes reactivarlo luego."
       confirmLabel={busy ? 'Eliminando…' : 'Eliminar'}
       cancelLabel="Cancelar"
       onConfirm={() => void onConfirm()}

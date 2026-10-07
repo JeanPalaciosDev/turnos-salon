@@ -41,7 +41,7 @@ export default function LinkWorkerScreen() {
 
       <View style={styles.body}>
         <Text style={styles.description}>
-          Ingresá el código de 6 dígitos que te dio el dueño del salón.
+          Ingresa el código de 6 dígitos que te dio el dueño del salón.
         </Text>
 
         <FormGroup>
