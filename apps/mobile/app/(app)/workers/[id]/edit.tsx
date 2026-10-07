@@ -1,33 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import {useEffect, useRef, useState} from 'react';
+import {ScrollView, View} from 'react-native';
+import {router, useLocalSearchParams} from 'expo-router';
 
-import { useAuth } from '../../../../src/auth/AuthProvider';
+import {useAuth} from '../../../../src/auth/AuthProvider';
 import {
-  WorkerValidationError,
+  type CommissionType,
   getWorker,
   updateWorker,
-  type CommissionType,
+  WorkerValidationError,
 } from '../../../../src/workers/workerRepository';
-import { AppScreen } from '../../../../src/components/AppScreen';
-import { Button } from '../../../../src/components/atoms';
-import {
-  FormFooter,
-  FormGroup,
-  FormHeaderRow,
-  FormHint,
-  FormInput,
-  FormLabel,
-} from '../../../../src/components/forms';
-import { createStyles } from '../../../../src/theme';
+import {AppScreen} from '../../../../src/components';
+import {Button} from '../../../../src/components/atoms';
+import {FormFooter, FormGroup, FormHeaderRow, FormHint, FormInput, FormLabel,} from '../../../../src/components/forms';
+import {createStyles} from '../../../../src/theme';
 
 /**
  * Trabajadores, Editar. Precarga con getWorker; edita Nombre + Teléfono y
  * PRESERVA la comisión existente (el diseño no la muestra).
  */
 export default function WorkerEditScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { profile, syncNow } = useAuth();
+  const {id} = useLocalSearchParams<{ id: string }>();
+  const {profile, syncNow} = useAuth();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
@@ -86,15 +79,15 @@ export default function WorkerEditScreen() {
 
   return (
     <AppScreen header={false}>
-      <FormHeaderRow title="Editar trabajador" onBack={() => router.back()} />
+      <FormHeaderRow title="Editar trabajador" onBack={() => router.back()}/>
       <ScrollView contentContainerStyle={styles.body}>
         <FormGroup>
-          <FormLabel label="Nombre" required />
-          <FormInput value={name} onChangeText={setName} placeholder="Nombre del trabajador" />
+          <FormLabel label="Nombre" required/>
+          <FormInput value={name} onChangeText={setName} placeholder="Nombre del trabajador"/>
         </FormGroup>
 
         <FormGroup>
-          <FormLabel label="Teléfono" optional />
+          <FormLabel label="Teléfono" optional/>
           <FormInput
             value={phone}
             onChangeText={setPhone}
@@ -104,7 +97,7 @@ export default function WorkerEditScreen() {
         </FormGroup>
 
         {errors.map((msg) => (
-          <FormHint key={msg} text={msg} variant="error" />
+          <FormHint key={msg} text={msg} variant="error"/>
         ))}
       </ScrollView>
 
@@ -115,6 +108,12 @@ export default function WorkerEditScreen() {
             label={busy ? 'Guardando…' : 'Guardar cambios'}
             onPress={() => void onSave()}
             disabled={busy || !loaded}
+          />
+          <Button
+            variant="secondary"
+            label="Vincular cuenta"
+            onPress={() => router.push(`/(app)/workers/${id}/invite`)}
+            disabled={!loaded}
           />
           <Button
             variant="danger-ghost"
@@ -128,6 +127,6 @@ export default function WorkerEditScreen() {
 }
 
 const useStyles = createStyles((t) => ({
-  body: { padding: t.spacing.xl, gap: t.spacing.xs },
-  footerWrap: { paddingBottom: t.spacing.lg },
+  body: {padding: t.spacing.xl, gap: t.spacing.xs},
+  footerWrap: {paddingBottom: t.spacing.lg},
 }));

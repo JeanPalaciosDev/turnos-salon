@@ -1,17 +1,12 @@
-import { Database } from '@nozbe/watermelondb';
-import { tableSchema } from '@nozbe/watermelondb';
-import {
-  addColumns,
-  createTable,
-  schemaMigrations,
-} from '@nozbe/watermelondb/Schema/migrations';
-import type { UserProfile } from '@turnos/core';
-import { migrations, schemaDefinition } from '@turnos/models';
+import {Database} from '@nozbe/watermelondb';
+import {addColumns, createTable, schemaMigrations,} from '@nozbe/watermelondb/Schema/migrations';
+import type {UserProfile} from '@turnos/core';
+import {migrations, schemaDefinition} from '@turnos/models';
 
-import { createAdapter } from './dbAdapter';
-import { secureStore } from '../lib/secureStore';
-import { modelClasses } from './models';
-import { databaseSchema } from './schema';
+import {createAdapter} from './dbAdapter';
+import {secureStore} from '../lib/secureStore';
+import {modelClasses} from './models';
+import {databaseSchema} from './schema';
 
 const LOCAL_DATABASE_OWNER_KEY = 'turnos-salon.local-database-owner';
 const LOCAL_DATABASE_SCOPE_KEY = 'turnos-salon.local-database-scope';
@@ -36,14 +31,14 @@ const databaseMigrations = schemaMigrations({
           columns: step.columns.map((c) => ({
             name: c.name,
             type: c.type as SchemaColumnType,
-            ...(c.isOptional === undefined ? {} : { isOptional: c.isOptional }),
+            ...(c.isOptional === undefined ? {} : {isOptional: c.isOptional}),
           })),
         });
       }
       if (step.type === 'create_table') {
         const definition = schemaDefinition.tables[
           step.name as keyof typeof schemaDefinition.tables
-        ];
+          ];
         return createTable({
           name: step.name,
           columns: definition.columns.map((c) => ({
@@ -51,7 +46,7 @@ const databaseMigrations = schemaMigrations({
             type: c.type as SchemaColumnType,
             ...((c as { isOptional?: boolean }).isOptional === undefined
               ? {}
-              : { isOptional: (c as { isOptional?: boolean }).isOptional }),
+              : {isOptional: (c as { isOptional?: boolean }).isOptional}),
           })),
         });
       }
@@ -101,7 +96,9 @@ export async function prepareLocalDatabaseForUser(profile: LocalDatabaseScope): 
   const legacyWorkerCache = profile.role === 'worker' && !currentScope;
 
   if (accountChanged || scopeChanged || legacyWorkerCache) {
-    await database.unsafeResetDatabase();
+    await database.write(async () => {
+      await database.unsafeResetDatabase();
+    });
   }
 
   await Promise.all([
@@ -115,7 +112,9 @@ export async function prepareLocalDatabaseForUser(profile: LocalDatabaseScope): 
  * reset elimina los cambios locales que aún no se hayan sincronizado.
  */
 export async function clearLocalDatabaseForSignOut(): Promise<void> {
-  await database.unsafeResetDatabase();
+  await database.write(async () => {
+    await database.unsafeResetDatabase();
+  });
   await Promise.all([
     secureStore.removeItem(LOCAL_DATABASE_OWNER_KEY),
     secureStore.removeItem(LOCAL_DATABASE_SCOPE_KEY),

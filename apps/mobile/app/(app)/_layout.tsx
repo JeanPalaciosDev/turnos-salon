@@ -24,6 +24,7 @@ export default function AppLayout() {
       <Stack.Screen name="workers/new" />
       <Stack.Screen name="workers/[id]/edit" />
       <Stack.Screen name="workers/[id]/delete" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="workers/[id]/invite" options={{ presentation: 'modal' }} />
 
       {/* Clientes */}
       <Stack.Screen name="clients/index" />
