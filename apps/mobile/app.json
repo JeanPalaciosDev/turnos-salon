@@ -21,7 +21,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.turnossalon.app"
+      "package": "com.turnossalon.app",
+      "permissions": ["android.permission.INTERNET"]
     },
     "scheme": "turnos-salon",
     "web": {
@@ -30,12 +31,7 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font",
-      ["expo-build-properties", {
-        "android": {
-          "usesCleartextTraffic": true
-        }
-      }]
+      "expo-font"
     ],
     "extra": {
       "router": {

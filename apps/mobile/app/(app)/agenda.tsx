@@ -138,6 +138,16 @@ export default function AgendaScreen() {
   const isToday = iso(selDate) === todayIso;
   const dayLabel = FULL_DAY_NAMES[selDate.getDay()] + ' ' + selDate.getDate() + (isToday ? ' · hoy' : '');
 
+  const nowIndex = useMemo(() => {
+    if (!isToday) {
+      return undefined;
+    }
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const upcoming = items.findIndex((item) => item.time > currentTime);
+    return upcoming === -1 ? items.length : upcoming;
+  }, [isToday, items]);
+
   return (
     <AppScreen fab={<FabButton onPress={() => router.push('/(app)/appointments/new')} />}>
       <View style={styles.container}>
@@ -159,6 +169,7 @@ export default function AgendaScreen() {
             <WeekList
               items={items}
               onItemPress={(id) => router.push(`/(app)/appointments/${id}`)}
+              nowIndex={nowIndex}
             />
           </View>
         ) : (
