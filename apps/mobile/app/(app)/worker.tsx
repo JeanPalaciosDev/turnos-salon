@@ -11,27 +11,25 @@ import {
 // Client names resolved from appointment data (worker has no client list access);
 import type {AppointmentModel} from '../../src/database';
 import {useObservable} from '../../src/lib/useObservable';
+import {useBusinessTimezone} from '../../src/lib/businessConfig';
+import {todayIso} from '../../src/lib/clock';
 import {AppScreen} from '../../src/components';
 import {Button} from '../../src/components/atoms';
 import {HomeHeader} from '../../src/components/detail';
 import {AppointmentCard} from '../../src/components/agenda';
 import {createStyles} from '../../src/theme';
 
-function todayIso(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
 /** Pantalla 5 — Principal Worker (§8.3). Muestra el próximo turno propio real. */
 export default function WorkerHomeScreen() {
   const {profile, syncNow} = useAuth();
+  const timeZone = useBusinessTimezone(profile);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const styles = useStyles();
 
   const appointments = useObservable(
-    () => (profile ? observeAppointmentsForDay(profile, todayIso()) : undefined),
-    [profile?.id],
+    () => (profile ? observeAppointmentsForDay(profile, todayIso(timeZone)) : undefined),
+    [profile?.id, timeZone],
     [] as AppointmentModel[],
   );
 

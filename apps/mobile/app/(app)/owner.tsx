@@ -1,28 +1,24 @@
 import { useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { DateTime } from 'luxon';
 
 import { useAuth } from '../../src/auth/AuthProvider';
 import { observeAppointmentsForDay } from '../../src/appointments/appointmentRepository';
 import type { AppointmentModel } from '../../src/database/models';
 import { useObservable } from '../../src/lib/useObservable';
+import { useBusinessTimezone } from '../../src/lib/businessConfig';
+import { nowHm, todayIso as todayIsoInZone } from '../../src/lib/clock';
 import { AppScreen } from '../../src/components/AppScreen';
 import { HomeHeader, SectionHeading } from '../../src/components/detail';
 import { StatCard } from '../../src/components/lists';
 import { createStyles } from '../../src/theme';
 
-function formatTodayDate(): string {
-  const raw = new Date().toLocaleDateString('es', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+function formatTodayDate(timeZone?: string): string {
+  const base = DateTime.now().setLocale('es');
+  const dt = timeZone ? base.setZone(timeZone) : base;
+  const raw = dt.toLocaleString({ weekday: 'long', day: 'numeric', month: 'long' });
   return raw.charAt(0).toUpperCase() + raw.slice(1);
-}
-
-function todayIso(): string {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
 function greetingName(email: string): string {
@@ -30,9 +26,7 @@ function greetingName(email: string): string {
   return local.charAt(0).toUpperCase() + local.slice(1);
 }
 
-function nextTurnTime(appointments: AppointmentModel[]): string {
-  const now = new Date();
-  const nowHM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+function nextTurnTime(appointments: AppointmentModel[], nowHM: string): string {
   const future = appointments
     .filter(a => a.status !== 'cancelled' && a.startTime > nowHM)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -49,9 +43,10 @@ const QUICK_LINKS = [
 /** Pantalla 4 — Principal Owner (§8.2). */
 export default function OwnerHomeScreen() {
   const { profile } = useAuth();
+  const timeZone = useBusinessTimezone(profile);
   const styles = useStyles();
 
-  const today = useMemo(() => todayIso(), []);
+  const today = useMemo(() => todayIsoInZone(timeZone), [timeZone]);
   const appointments = useObservable(
     () => (profile ? observeAppointmentsForDay(profile, today) : undefined),
     [profile?.id, today],
@@ -65,7 +60,7 @@ export default function OwnerHomeScreen() {
   return (
     <AppScreen>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <HomeHeader greeting={greet} subgreeting={formatTodayDate()} />
+        <HomeHeader greeting={greet} subgreeting={formatTodayDate(timeZone)} />
 
         <View style={styles.stats}>
           <View style={styles.statCol}>
@@ -78,7 +73,7 @@ export default function OwnerHomeScreen() {
           <View style={styles.statCol}>
             <StatCard
               label="Próximo turno"
-              value={nextTurnTime(appointments)}
+              value={nextTurnTime(appointments, nowHm(timeZone))}
               onPress={() => router.push('/(app)/agenda')}
             />
           </View>

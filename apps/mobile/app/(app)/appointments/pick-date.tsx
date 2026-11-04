@@ -3,12 +3,9 @@ import { View } from 'react-native';
 import { router } from 'expo-router';
 
 import { patchAppointmentDraft } from '../../../src/appointments/appointmentDraft';
+import { dateToIso } from '../../../src/lib/clock';
 import { Calendar } from '../../../src/components/modals';
 import { createStyles } from '../../../src/theme';
-
-function iso(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 /** Pantalla 15 — Selector de fecha (§8.7). allowPast=false, escribe en el borrador. */
 export default function PickDateModal() {
@@ -16,7 +13,7 @@ export default function PickDateModal() {
   const styles = useStyles();
 
   const confirm = () => {
-    if (selected) patchAppointmentDraft({ date: iso(selected) });
+    if (selected) patchAppointmentDraft({ date: dateToIso(selected) });
     router.back();
   };
 

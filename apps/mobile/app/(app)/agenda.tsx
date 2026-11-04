@@ -14,6 +14,15 @@ import type {
   WorkerModel,
 } from '../../src/database/models';
 import { useObservable } from '../../src/lib/useObservable';
+import { useBusinessTimezone } from '../../src/lib/businessConfig';
+import {
+  addDays,
+  dateToIso,
+  nowHm,
+  startOfWeek,
+  todayIso as todayIsoInZone,
+  weekdayIndex,
+} from '../../src/lib/clock';
 import { AppScreen } from '../../src/components/AppScreen';
 import { FabButton } from '../../src/components/atoms';
 import {
@@ -28,17 +37,6 @@ import { createStyles } from '../../src/theme';
 const DAY_NAMES = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'];
 const FULL_DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-
-function iso(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-/** Domingo de la semana que contiene `d`. */
-function startOfWeek(d: Date): Date {
-  const s = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  s.setDate(s.getDate() - s.getDay());
-  return s;
-}
 
 /** Mapea el status de dominio (6 estados) al del AppointmentCard (color). */
 function toCardStatus(status: string): AppointmentCardStatus {
@@ -62,33 +60,32 @@ function toCardStatus(status: string): AppointmentCardStatus {
 /** Pantalla 11 — Agenda semanal (§8.4). Conectada a datos reales. */
 export default function AgendaScreen() {
   const { profile } = useAuth();
+  const timeZone = useBusinessTimezone(profile);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [selectedIndex, setSelectedIndex] = useState(new Date().getDay());
+  const [selectedIndex, setSelectedIndex] = useState(() => weekdayIndex(timeZone));
   const styles = useStyles();
 
   const weekStart = useMemo(() => {
     const base = startOfWeek(new Date());
-    base.setDate(base.getDate() + weekOffset * 7);
-    return base;
+    return addDays(base, weekOffset * 7);
   }, [weekOffset]);
 
   const days = useMemo(
     () =>
       Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(weekStart);
-        d.setDate(d.getDate() + i);
+        const d = addDays(weekStart, i);
         return { date: d, dayName: DAY_NAMES[i], dayNumber: d.getDate() };
       }),
     [weekStart],
   );
 
-  const selectedDate = iso(days[selectedIndex]?.date ?? weekStart);
+  const selectedDate = dateToIso(days[selectedIndex]?.date ?? weekStart);
   const first = days[0].date;
   const last = days[6].date;
   const title = `${first.getDate()} ${MONTHS[first.getMonth()]} – ${last.getDate()} ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
 
-  const todayIso = iso(new Date());
-  const todayIndex = days.findIndex((d) => iso(d.date) === todayIso);
+  const todayIso = todayIsoInZone(timeZone);
+  const todayIndex = days.findIndex((d) => dateToIso(d.date) === todayIso);
 
   const appointments = useObservable(
     () => (profile ? observeAppointmentsForDay(profile, selectedDate) : undefined),
@@ -135,18 +132,17 @@ export default function AgendaScreen() {
   }));
 
   const selDate = days[selectedIndex]?.date ?? new Date();
-  const isToday = iso(selDate) === todayIso;
+  const isToday = dateToIso(selDate) === todayIso;
   const dayLabel = FULL_DAY_NAMES[selDate.getDay()] + ' ' + selDate.getDate() + (isToday ? ' · hoy' : '');
 
   const nowIndex = useMemo(() => {
     if (!isToday) {
       return undefined;
     }
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const currentTime = nowHm(timeZone);
     const upcoming = items.findIndex((item) => item.time > currentTime);
     return upcoming === -1 ? items.length : upcoming;
-  }, [isToday, items]);
+  }, [isToday, items, timeZone]);
 
   return (
     <AppScreen fab={<FabButton onPress={() => router.push('/(app)/appointments/new')} />}>
