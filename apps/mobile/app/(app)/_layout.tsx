@@ -37,6 +37,7 @@ export default function AppLayout() {
       <Stack.Screen name="appointments/new" />
       <Stack.Screen name="appointments/[id]/edit" />
       <Stack.Screen name="appointments/[id]/delete" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="appointments/[id]/payment" options={{ presentation: 'modal' }} />
       <Stack.Screen name="appointments/pick-date" options={{ presentation: 'modal' }} />
       <Stack.Screen name="appointments/pick-time" options={{ presentation: 'modal' }} />
       <Stack.Screen name="appointments/pick-services" options={{ presentation: 'modal' }} />

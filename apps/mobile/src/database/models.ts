@@ -376,6 +376,98 @@ export class AppointmentModel extends Model {
 
 export class PaymentModel extends Model {
   static table = TABLES.PAYMENTS;
+
+  get businessId(): string {
+    return this._getRaw('business_id') as string;
+  }
+
+  set businessId(value: string) {
+    this._setRaw('business_id', value);
+  }
+
+  get appointmentId(): string {
+    return this._getRaw('appointment_id') as string;
+  }
+
+  set appointmentId(value: string) {
+    this._setRaw('appointment_id', value);
+  }
+
+  /** Monto entero en la unidad mínima (4500 = $45,00). */
+  get amount(): number {
+    return this._getRaw('amount') as number;
+  }
+
+  set amount(value: number) {
+    this._setRaw('amount', value);
+  }
+
+  get currency(): string {
+    return this._getRaw('currency') as string;
+  }
+
+  set currency(value: string) {
+    this._setRaw('currency', value);
+  }
+
+  /** Medio de pago: cash | card | transfer | other. */
+  get method(): string {
+    return this._getRaw('method') as string;
+  }
+
+  set method(value: string) {
+    this._setRaw('method', value);
+  }
+
+  /** Tipo de cambio congelado cuando la moneda del pago difiere de la base. */
+  get exchangeRate(): number | undefined {
+    return (this._getRaw('exchange_rate') as number | null) ?? undefined;
+  }
+
+  set exchangeRate(value: number | undefined) {
+    this._setRaw('exchange_rate', value ?? null);
+  }
+
+  get exchangeBaseCurrency(): string | undefined {
+    return (this._getRaw('exchange_base_currency') as string | null) ?? undefined;
+  }
+
+  set exchangeBaseCurrency(value: string | undefined) {
+    this._setRaw('exchange_base_currency', value ?? null);
+  }
+
+  /** Momento del cobro (timestamp en ms). */
+  get paidAt(): number {
+    return this._getRaw('paid_at') as number;
+  }
+
+  set paidAt(value: number) {
+    this._setRaw('paid_at', value);
+  }
+
+  get updatedAt(): number {
+    return this._getRaw('updated_at') as number;
+  }
+
+  set updatedAt(value: number) {
+    this._setRaw('updated_at', value);
+  }
+
+  get syncVersion(): number {
+    return this._getRaw('sync_version') as number;
+  }
+
+  set syncVersion(value: number) {
+    this._setRaw('sync_version', value);
+  }
+
+  get isDeleted(): boolean {
+    return this._getRaw('is_deleted') as boolean;
+  }
+
+  set isDeleted(value: boolean) {
+    this._setRaw('is_deleted', value);
+  }
 }
 
 /**
