@@ -12,6 +12,8 @@ export default function AppLayout() {
       <Stack.Screen name="owner" />
       <Stack.Screen name="worker" />
       <Stack.Screen name="agenda" />
+      <Stack.Screen name="commissions" />
+      <Stack.Screen name="settings" />
 
       {/* Servicios */}
       <Stack.Screen name="services/index" />

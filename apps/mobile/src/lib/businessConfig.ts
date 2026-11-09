@@ -12,6 +12,10 @@ function readTimezone(record: BusinessConfigModel): string | undefined {
     : undefined;
 }
 
+function readCommissionsEnabled(record: BusinessConfigModel): boolean {
+  return record._getRaw('commissions_enabled') === true;
+}
+
 /**
  * Lee una vez la zona horaria IANA del negocio (business_config.timezone).
  * Devuelve undefined si el primer pull aún no trajo la fila: quien la consume
@@ -67,4 +71,46 @@ export function useBusinessTimezone(profile: UserProfile | null): string | undef
   }, [profile?.business_id, profile]);
 
   return timezone;
+}
+
+/**
+ * Observa de forma reactiva si el negocio usa el sistema de comisiones
+ * (business_config.commissions_enabled). Emite false hasta que el primer pull
+ * trae business_config, que es el comportamiento seguro: la feature es opcional
+ * y está apagada por defecto. La UI de comisiones y dashboard se muestra solo
+ * cuando esto es true.
+ */
+export function useCommissionsEnabled(profile: UserProfile | null): boolean {
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    if (!profile) {
+      setEnabled(false);
+      return;
+    }
+
+    let active = true;
+    const subscription = database
+      .get<BusinessConfigModel>(TABLES.BUSINESS_CONFIG)
+      .findAndObserve(profile.business_id)
+      .subscribe({
+        next: (record) => {
+          if (active) {
+            setEnabled(record ? readCommissionsEnabled(record) : false);
+          }
+        },
+        error: () => {
+          if (active) {
+            setEnabled(false);
+          }
+        },
+      });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [profile?.business_id, profile]);
+
+  return enabled;
 }

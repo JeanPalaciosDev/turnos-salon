@@ -7,7 +7,7 @@ import { useAuth } from '../../src/auth/AuthProvider';
 import { observeAppointmentsForDay } from '../../src/appointments/appointmentRepository';
 import type { AppointmentModel } from '../../src/database/models';
 import { useObservable } from '../../src/lib/useObservable';
-import { useBusinessTimezone } from '../../src/lib/businessConfig';
+import { useBusinessTimezone, useCommissionsEnabled } from '../../src/lib/businessConfig';
 import { nowHm, todayIso as todayIsoInZone } from '../../src/lib/clock';
 import { AppScreen } from '../../src/components/AppScreen';
 import { HomeHeader, SectionHeading } from '../../src/components/detail';
@@ -33,17 +33,27 @@ function nextTurnTime(appointments: AppointmentModel[], nowHM: string): string {
   return future.length > 0 ? future[0].startTime : '—';
 }
 
-const QUICK_LINKS = [
-  { label: 'Agenda', icon: '📅', href: '/(app)/agenda' as const },
-  { label: 'Servicios', icon: '✂️', href: '/(app)/services' as const },
-  { label: 'Trabajadores', icon: '💇', href: '/(app)/workers' as const },
-  { label: 'Clientes', icon: '🧑', href: '/(app)/clients' as const },
-] satisfies { label: string; icon: string; href: string }[];
+type QuickLink = { label: string; icon: string; href: string };
+
+function buildQuickLinks(commissionsEnabled: boolean): QuickLink[] {
+  const links: QuickLink[] = [
+    { label: 'Agenda', icon: '📅', href: '/(app)/agenda' },
+    { label: 'Servicios', icon: '✂️', href: '/(app)/services' },
+    { label: 'Trabajadores', icon: '💇', href: '/(app)/workers' },
+    { label: 'Clientes', icon: '🧑', href: '/(app)/clients' },
+  ];
+  if (commissionsEnabled) {
+    links.push({ label: 'Comisiones', icon: '💰', href: '/(app)/commissions' });
+  }
+  links.push({ label: 'Ajustes', icon: '⚙️', href: '/(app)/settings' });
+  return links;
+}
 
 /** Pantalla 4 — Principal Owner (§8.2). */
 export default function OwnerHomeScreen() {
   const { profile } = useAuth();
   const timeZone = useBusinessTimezone(profile);
+  const commissionsEnabled = useCommissionsEnabled(profile);
   const styles = useStyles();
 
   const today = useMemo(() => todayIsoInZone(timeZone), [timeZone]);
@@ -80,18 +90,18 @@ export default function OwnerHomeScreen() {
         </View>
 
         <SectionHeading title="Accesos" />
-        <QuickLinks />
+        <QuickLinks links={buildQuickLinks(commissionsEnabled)} />
       </ScrollView>
     </AppScreen>
   );
 }
 
-function QuickLinks() {
+function QuickLinks({ links }: { links: QuickLink[] }) {
   const styles = useLinkStyles();
 
   return (
     <View style={styles.list}>
-      {QUICK_LINKS.map((item) => (
+      {links.map((item) => (
         <Pressable
           key={item.href}
           onPress={() => router.push(item.href as never)}

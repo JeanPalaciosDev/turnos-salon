@@ -23,8 +23,9 @@ export type TableName = (typeof TABLES)[keyof typeof TABLES];
  * Schema version — incrementar con cada migración.
  * v2 (2026-09): modelo de dominio del rediseño (migración 00010) — tabla puente
  * appointment_services, worker_id opcional, campos nuevos.
+ * v3 (2026-11): flag opcional de comisiones del negocio (migración 00013).
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 /**
  * Definición del schema para WatermelonDB.
@@ -41,6 +42,7 @@ export const schemaDefinition = {
         { name: 'name', type: 'string' as const },
         { name: 'base_currency', type: 'string' as const },
         { name: 'timezone', type: 'string' as const },
+        { name: 'commissions_enabled', type: 'boolean' as const },
         { name: 'updated_at', type: 'number' as const },
         { name: 'sync_version', type: 'number' as const },
       ],

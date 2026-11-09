@@ -21,5 +21,7 @@ export const NAV_ROUTES: NavRoute[] = [
   { label: 'Servicios', href: '/(app)/services', icon: '✂️' },
   { label: 'Trabajadores', href: '/(app)/workers', icon: '💇' },
   { label: 'Clientes', href: '/(app)/clients', icon: '🧑' },
+  { label: 'Comisiones', href: '/(app)/commissions', icon: '💰' },
+  { label: 'Ajustes', href: '/(app)/settings', icon: '⚙️' },
   { label: 'Cerrar sesión', href: '/(auth)/login', icon: '🚪' },
 ];

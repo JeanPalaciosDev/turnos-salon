@@ -9,6 +9,8 @@ export type BusinessConfig = {
   name: string;
   base_currency: string;
   timezone: string;
+  /** El negocio usa el sistema de comisiones. Opcional y apagado por defecto. */
+  commissions_enabled: boolean;
   updated_at: number;
   /** Versión monotónica asignada por el servidor para sincronización. */
   sync_version: number;

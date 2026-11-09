@@ -46,3 +46,19 @@ export function startOfWeek(date: Date): Date {
 export function addDays(date: Date, days: number): Date {
   return DateTime.fromJSDate(date).startOf('day').plus({ days }).toJSDate();
 }
+
+/** Primer día del mes actual en la zona del negocio, en ISO "YYYY-MM-DD". */
+export function startOfMonthIso(timeZone?: string): string {
+  return at(timeZone).startOf('month').toFormat('yyyy-LL-dd');
+}
+
+/** Último día del mes actual en la zona del negocio, en ISO "YYYY-MM-DD". */
+export function endOfMonthIso(timeZone?: string): string {
+  return at(timeZone).endOf('month').toFormat('yyyy-LL-dd');
+}
+
+/** Nombre del mes actual capitalizado en la zona del negocio (es), p. ej. "Noviembre". */
+export function monthLabel(timeZone?: string): string {
+  const raw = at(timeZone).setLocale('es').toFormat('LLLL yyyy');
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}

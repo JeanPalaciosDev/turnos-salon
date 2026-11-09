@@ -49,4 +49,15 @@ export const migrations: Migration[] = [
       },
     ],
   },
+  {
+    // v3 (2026-11): flag opcional de comisiones del negocio (SQL: migración 00013).
+    toVersion: 3,
+    steps: [
+      {
+        type: 'add_columns',
+        table: 'business_config',
+        columns: [{ name: 'commissions_enabled', type: 'boolean' }],
+      },
+    ],
+  },
 ];
