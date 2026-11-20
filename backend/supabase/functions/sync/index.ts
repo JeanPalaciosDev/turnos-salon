@@ -15,6 +15,7 @@ const TABLE_NAMES = [
   'appointments',
   'appointment_services',
   'payments',
+  'worker_service_commissions',
 ] as const;
 
 type TableName = (typeof TABLE_NAMES)[number];

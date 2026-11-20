@@ -5,12 +5,21 @@
  */
 
 /**
- * Convierte un entero en unidad mínima a texto con dos decimales y el código de
- * moneda, p. ej. formatMoney(4500, 'ARS') -> "$45,00 ARS". Usa coma decimal
- * (convención de la app, español neutro).
+ * Convierte un entero en unidad mínima a texto con separador de miles, dos
+ * decimales y el código de moneda: formatMoney(4500, 'ARS') -> "$45,00 ARS",
+ * formatMoney(1000000, 'ARS') -> "$10.000,00 ARS". Convención del español
+ * neutro: punto para los miles y coma para los decimales.
+ *
+ * La agrupación se hace a mano en lugar de con toLocaleString: en Hermes sin
+ * ICU completo, toLocaleString('es') puede caer al formato en-US e invertir los
+ * separadores ("10,000.00"), así que el resultado sería distinto en web y en
+ * nativo.
  */
 export function formatMoney(amountMinorUnits: number, currency: string): string {
-  const major = amountMinorUnits / 100;
-  const text = major.toFixed(2).replace('.', ',');
-  return `$${text} ${currency.trim().toUpperCase()}`;
+  const isNegative = amountMinorUnits < 0;
+  const [whole, decimals] = Math.abs(amountMinorUnits / 100).toFixed(2).split('.');
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const sign = isNegative ? '-' : '';
+
+  return `${sign}$${grouped},${decimals} ${currency.trim().toUpperCase()}`;
 }

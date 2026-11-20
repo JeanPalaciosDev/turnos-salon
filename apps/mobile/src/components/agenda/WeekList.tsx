@@ -8,6 +8,8 @@ import { NowLine } from './NowLine';
 interface WeekListItem {
   id: string;
   time: string;
+  /** Hora de fin, para mostrar el rango en la tarjeta. */
+  endTime?: string;
   clientName: string;
   serviceName: string;
   workerName?: string;
@@ -52,6 +54,7 @@ export function WeekList({ items, onItemPress, nowIndex }: WeekListProps) {
           ) : null}
           <AppointmentCard
             time={item.time}
+            endTime={item.endTime}
             clientName={item.clientName}
             serviceName={item.serviceName}
             status={item.status}

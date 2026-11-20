@@ -550,6 +550,86 @@ export class AppointmentServiceModel extends Model {
   }
 }
 
+/**
+ * Excepción de comisión de un trabajador para un servicio puntual (migración
+ * 00016). Sobrescribe la comisión por defecto del trabajador solo en ese servicio.
+ */
+export class WorkerServiceCommissionModel extends Model {
+  static table = TABLES.WORKER_SERVICE_COMMISSIONS;
+
+  get businessId(): string {
+    return this._getRaw('business_id') as string;
+  }
+
+  set businessId(value: string) {
+    this._setRaw('business_id', value);
+  }
+
+  get workerId(): string {
+    return this._getRaw('worker_id') as string;
+  }
+
+  set workerId(value: string) {
+    this._setRaw('worker_id', value);
+  }
+
+  get serviceId(): string {
+    return this._getRaw('service_id') as string;
+  }
+
+  set serviceId(value: string) {
+    this._setRaw('service_id', value);
+  }
+
+  get commissionType(): 'percentage' | 'fixed_per_service' {
+    return this._getRaw('commission_type') as 'percentage' | 'fixed_per_service';
+  }
+
+  set commissionType(value: 'percentage' | 'fixed_per_service') {
+    this._setRaw('commission_type', value);
+  }
+
+  get commissionValue(): number {
+    return this._getRaw('commission_value') as number;
+  }
+
+  set commissionValue(value: number) {
+    this._setRaw('commission_value', value);
+  }
+
+  get commissionCurrency(): string | undefined {
+    return (this._getRaw('commission_currency') as string | null) ?? undefined;
+  }
+
+  set commissionCurrency(value: string | undefined) {
+    this._setRaw('commission_currency', value ?? null);
+  }
+
+  get updatedAt(): number {
+    return this._getRaw('updated_at') as number;
+  }
+
+  set updatedAt(value: number) {
+    this._setRaw('updated_at', value);
+  }
+
+  get syncVersion(): number {
+    return this._getRaw('sync_version') as number;
+  }
+
+  set syncVersion(value: number) {
+    this._setRaw('sync_version', value);
+  }
+
+  get isDeleted(): boolean {
+    return this._getRaw('is_deleted') as boolean;
+  }
+
+  set isDeleted(value: boolean) {
+    this._setRaw('is_deleted', value);
+  }
+}
+
 export const modelClasses = [
   BusinessConfigModel,
   UserProfileModel,
@@ -559,4 +639,5 @@ export const modelClasses = [
   AppointmentModel,
   AppointmentServiceModel,
   PaymentModel,
+  WorkerServiceCommissionModel,
 ];

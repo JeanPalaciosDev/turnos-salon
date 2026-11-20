@@ -15,6 +15,7 @@ export const TABLES = {
   APPOINTMENTS: 'appointments',
   APPOINTMENT_SERVICES: 'appointment_services',
   PAYMENTS: 'payments',
+  WORKER_SERVICE_COMMISSIONS: 'worker_service_commissions',
 } as const;
 
 export type TableName = (typeof TABLES)[keyof typeof TABLES];
@@ -24,8 +25,10 @@ export type TableName = (typeof TABLES)[keyof typeof TABLES];
  * v2 (2026-09): modelo de dominio del rediseño (migración 00010) — tabla puente
  * appointment_services, worker_id opcional, campos nuevos.
  * v3 (2026-11): flag opcional de comisiones del negocio (migración 00013).
+ * v4 (2026-11): excepciones de comisión por servicio (migración 00016) —
+ * tabla worker_service_commissions.
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 /**
  * Definición del schema para WatermelonDB.
@@ -139,6 +142,22 @@ export const schemaDefinition = {
         { name: 'exchange_rate', type: 'number' as const, isOptional: true },
         { name: 'exchange_base_currency', type: 'string' as const, isOptional: true },
         { name: 'paid_at', type: 'number' as const },
+        { name: 'updated_at', type: 'number' as const },
+        { name: 'sync_version', type: 'number' as const },
+        { name: 'is_deleted', type: 'boolean' as const },
+      ],
+    },
+    // Excepciones de comisión por servicio: sobrescriben la comisión por defecto
+    // del trabajador solo para ese servicio.
+    [TABLES.WORKER_SERVICE_COMMISSIONS]: {
+      columns: [
+        { name: 'business_id', type: 'string' as const },
+        { name: 'worker_id', type: 'string' as const },
+        { name: 'service_id', type: 'string' as const },
+        { name: 'commission_type', type: 'string' as const },
+        { name: 'commission_value', type: 'number' as const },
+        // Solo para fixed_per_service; el porcentaje no lleva moneda.
+        { name: 'commission_currency', type: 'string' as const, isOptional: true },
         { name: 'updated_at', type: 'number' as const },
         { name: 'sync_version', type: 'number' as const },
         { name: 'is_deleted', type: 'boolean' as const },

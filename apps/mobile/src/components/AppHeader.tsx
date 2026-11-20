@@ -22,6 +22,10 @@ export function AppHeader() {
           style={styles.iconBtn}
           onPress={() => setThemeOpen((v) => !v)}
           accessibilityLabel="Tema"
+          accessibilityRole="button"
+          // El botón se dibuja de 22px para no romper el diseño del header, pero
+          // el área pulsable llega a 44px, que es el mínimo recomendado.
+          hitSlop={11}
         >
           <Text style={styles.brush}>🖌</Text>
         </Pressable>
@@ -32,6 +36,8 @@ export function AppHeader() {
         style={styles.navBtn}
         onPress={() => setNavOpen(true)}
         accessibilityLabel="Menú de navegación"
+        accessibilityRole="button"
+        hitSlop={14}
       >
         <Text style={styles.dots}>●●●</Text>
       </Pressable>
@@ -48,6 +54,10 @@ const useStyles = createStyles((t) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: t.spacing.xl,
+    // El header se declara arriba del cuerpo de la pantalla: AppScreen lo
+    // renderiza ANTES del body, así que sin esto el contenido pintaba encima
+    // del panel de tema y le robaba los clics.
+    zIndex: 20,
   },
   themeWrap: { position: 'relative' },
   iconBtn: {

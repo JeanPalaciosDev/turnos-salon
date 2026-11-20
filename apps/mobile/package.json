@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "expo start",
     "build": "node scripts/validate-palettes.mjs && echo 'Mobile build handled by EAS'",
+    "env:local": "node scripts/use-supabase-env.mjs local",
+    "env:hosted": "node scripts/use-supabase-env.mjs hosted",
     "theme:extract": "node scripts/extract-palettes.mjs",
     "theme:validate": "node scripts/validate-palettes.mjs",
     "assets:generate": "node scripts/generate-native-assets.cjs",

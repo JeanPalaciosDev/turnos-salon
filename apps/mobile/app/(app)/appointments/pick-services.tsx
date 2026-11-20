@@ -6,6 +6,7 @@ import { useAuth } from '../../../src/auth/AuthProvider';
 import { observeServices } from '../../../src/services/serviceRepository';
 import type { ServiceModel } from '../../../src/database/models';
 import { useObservable } from '../../../src/lib/useObservable';
+import { formatMoney } from '../../../src/lib/money';
 import {
   getAppointmentDraft,
   patchAppointmentDraft,
@@ -19,12 +20,9 @@ import {
 } from '../../../src/components/modals';
 import { createStyles } from '../../../src/theme';
 
-function formatPrice(amount: number, currency: string): string {
-  const value = (amount / 100).toLocaleString('es', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  return `$${value} ${currency}`;
+/** Concuerda el sustantivo con la cantidad: 1 servicio, 0 o 2+ servicios. */
+function pluralize(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
 }
 
 /** Pantalla 17 — Buscador de servicios (§8.7). Multi-select, datos reales. */
@@ -55,7 +53,7 @@ export default function PickServicesModal() {
     <ModalPanel visible onClose={() => router.back()}>
       <PickerModalHeader
         title="Servicios"
-        subtitle={`${selected.length} elegidos`}
+        subtitle={pluralize(selected.length, 'elegido', 'elegidos')}
         onClose={() => router.back()}
       />
       <ScrollView style={styles.list}>
@@ -67,7 +65,7 @@ export default function PickServicesModal() {
           <ServiceOptionRow
             key={s.id}
             label={s.name}
-            price={formatPrice(s.defaultPriceAmount, s.defaultPriceCurrency)}
+            price={formatMoney(s.defaultPriceAmount, s.defaultPriceCurrency)}
             duration={`${s.durationMinutes} min`}
             selected={selected.includes(s.id)}
             onPress={() => toggle(s.id)}
@@ -77,7 +75,7 @@ export default function PickServicesModal() {
       <View style={styles.footer}>
         <Button
           variant="primary"
-          label={`Agregar ${selected.length} servicios`}
+          label={`Agregar ${pluralize(selected.length, 'servicio', 'servicios')}`}
           onPress={confirm}
         />
       </View>

@@ -41,7 +41,11 @@ const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 /** Mapea el status de dominio (6 estados) al del AppointmentCard (color). */
 function toCardStatus(status: string): AppointmentCardStatus {
   switch (status) {
+    // 'created' y 'in_progress' compartían el color 'active', así que dos de los
+    // seis estados eran indistinguibles. 'created' pasa al token confirmed
+    // (verde salvia), que estaba sin usar.
     case 'created':
+      return 'confirmed';
     case 'in_progress':
       return 'active';
     case 'pending':
@@ -125,6 +129,7 @@ export default function AgendaScreen() {
   const items = appointments.map((a) => ({
     id: a.id,
     time: a.startTime,
+    endTime: a.endTime,
     clientName: clientNames.get(a.clientId) ?? 'Cliente',
     serviceName: a.serviceId ? serviceNames.get(a.serviceId) ?? '' : '',
     workerName: a.workerId ? workerNames.get(a.workerId) ?? 'Sin asignar' : 'Sin asignar',

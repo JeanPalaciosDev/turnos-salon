@@ -6,6 +6,7 @@ import {
   canViewCommissions,
   canViewDashboard,
   type CommissionableAppointment,
+  type CommissionRule,
   type DashboardSummary,
   sumCollectedInBaseCurrency,
   type UserProfile,
@@ -20,6 +21,7 @@ import {
   BusinessConfigModel,
   PaymentModel,
   WorkerModel,
+  WorkerServiceCommissionModel,
 } from '../database/models';
 import { getBusinessBaseCurrency } from '../services/serviceRepository';
 import { getSupabaseClient } from '../lib/supabase';
@@ -105,7 +107,7 @@ export async function getCommissionsForPeriod(
 
   const baseCurrency = await getBusinessBaseCurrency(profile);
 
-  const [appointments, workers] = await Promise.all([
+  const [appointments, workers, overrides] = await Promise.all([
     database
       .get<AppointmentModel>(TABLES.APPOINTMENTS)
       .query(
@@ -118,6 +120,10 @@ export async function getCommissionsForPeriod(
       .fetch(),
     database
       .get<WorkerModel>(TABLES.WORKERS)
+      .query(Q.where('business_id', profile.business_id), Q.where('is_deleted', false))
+      .fetch(),
+    database
+      .get<WorkerServiceCommissionModel>(TABLES.WORKER_SERVICE_COMMISSIONS)
       .query(Q.where('business_id', profile.business_id), Q.where('is_deleted', false))
       .fetch(),
   ]);
@@ -155,12 +161,11 @@ export async function getCommissionsForPeriod(
     paymentsByAppointment.set(payment.appointmentId, list);
   }
 
-  const serviceCountByAppointment = new Map<string, number>();
+  const servicesByAppointment = new Map<string, AppointmentServiceModel[]>();
   for (const bridge of bridges) {
-    serviceCountByAppointment.set(
-      bridge.appointmentId,
-      (serviceCountByAppointment.get(bridge.appointmentId) ?? 0) + 1
-    );
+    const list = servicesByAppointment.get(bridge.appointmentId) ?? [];
+    list.push(bridge);
+    servicesByAppointment.set(bridge.appointmentId, list);
   }
 
   const commissionablesByWorker = new Map<string, CommissionableAppointment[]>();
@@ -180,12 +185,28 @@ export async function getCommissionsForPeriod(
     const entry: CommissionableAppointment = {
       appointment_id: appointment.id,
       collected_in_base: collected,
-      service_count: serviceCountByAppointment.get(appointment.id) ?? 0,
+      // El precio snapshot pondera el reparto de lo recaudado entre servicios,
+      // que es lo que permite aplicar un porcentaje distinto por servicio.
+      services: (servicesByAppointment.get(appointment.id) ?? []).map((row) => ({
+        service_id: row.serviceId,
+        price_in_base: row.priceAmount ?? 0,
+      })),
     };
 
     const list = commissionablesByWorker.get(workerId) ?? [];
     list.push(entry);
     commissionablesByWorker.set(workerId, list);
+  }
+
+  const overridesByWorker = new Map<string, Record<string, CommissionRule>>();
+  for (const row of overrides) {
+    const forWorker = overridesByWorker.get(row.workerId) ?? {};
+    forWorker[row.serviceId] = {
+      commission_type: row.commissionType,
+      commission_value: row.commissionValue,
+      commission_currency: row.commissionCurrency,
+    };
+    overridesByWorker.set(row.workerId, forWorker);
   }
 
   const perWorker: WorkerCommissionView[] = [];
@@ -196,9 +217,13 @@ export async function getCommissionsForPeriod(
     }
     const commission = calculateWorkerCommission(
       {
-        id: worker.id,
-        commission_type: worker.commissionType,
-        commission_value: worker.commissionValue,
+        worker_id: worker.id,
+        default_rule: {
+          commission_type: worker.commissionType,
+          commission_value: worker.commissionValue,
+          commission_currency: worker.commissionCurrency,
+        },
+        overrides: overridesByWorker.get(worker.id) ?? {},
       },
       commissionables
     );

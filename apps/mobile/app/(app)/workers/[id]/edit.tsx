@@ -111,6 +111,12 @@ export default function WorkerEditScreen() {
           />
           <Button
             variant="secondary"
+            label="Configurar comisión"
+            onPress={() => router.push(`/(app)/workers/${id}/commission`)}
+            disabled={!loaded}
+          />
+          <Button
+            variant="secondary"
             label="Vincular cuenta"
             onPress={() => router.push(`/(app)/workers/${id}/invite`)}
             disabled={!loaded}

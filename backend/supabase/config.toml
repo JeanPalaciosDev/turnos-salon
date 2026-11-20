@@ -1,6 +1,12 @@
 # Supabase local development configuration
 # Docs: https://supabase.com/docs/guides/cli/config
 # This identifier is local to the CLI; it is not a hosted Supabase project reference.
+#
+# Perfil mínimo para desarrollo: solo se levantan los servicios que la app usa.
+# Activos:   postgres, kong (API en 54321), gotrue (auth), postgrest (REST + RPC),
+#            edge-runtime (funciones sync y validate-slot), studio (inspección).
+# Apagados:  storage/imgproxy, realtime, analytics (logflare/vector), pooler y
+#            el servidor de correo. Reduce contenedores, descarga y memoria.
 project_id = "turnos-salon"
 
 [api]
@@ -10,7 +16,14 @@ schemas = ["public"]
 
 [db]
 port = 54322
-major_version = 15
+# Igual al proyecto hospedado (Postgres 17). La CLI toma la versión del proyecto
+# vinculado desde .temp/postgres-version, así que dejar 15 aquí provocaba que el
+# volumen local quedara incompatible al reiniciar.
+major_version = 17
+
+# El pooler (supavisor) solo hace falta para conexiones serverless en producción.
+[db.pooler]
+enabled = false
 
 [db.seed]
 enabled = true
@@ -26,7 +39,30 @@ site_url = "http://localhost:3000"
 
 [auth.email]
 enable_signup = true
+# Sin confirmación por correo: el registro queda usable al instante y no hace
+# falta el servidor de correo local.
 enable_confirmations = false
 
+# La app no sube ni sirve archivos.
 [storage]
 enabled = false
+
+# La caché remota es WatermelonDB con sync explícito; no hay suscripciones
+# a postgres_changes, así que Realtime no se usa.
+[realtime]
+enabled = false
+
+# Telemetría local (logflare + vector): es el par de contenedores más pesado y
+# no aporta nada al desarrollo de la app.
+[analytics]
+enabled = false
+
+# Sin confirmaciones de correo no hace falta capturar mensajes salientes.
+# La CLI 2.115 avisa que [inbucket] está obsoleto, pero es la sección que
+# todavía aplica; [local_smtp] se ignora en esta versión.
+[inbucket]
+enabled = false
+
+# Necesario para las funciones sync y validate-slot.
+[edge_runtime]
+enabled = true

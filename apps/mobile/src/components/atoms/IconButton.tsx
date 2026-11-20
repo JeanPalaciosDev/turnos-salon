@@ -20,6 +20,8 @@ export function IconButton({ icon, onPress, variant = 'default' }: IconButtonPro
         pressed && styles.pressed,
       ]}
       accessibilityRole="button"
+      // Se dibuja de 36px (tamaño del diseño) con área pulsable de 44px.
+      hitSlop={4}
     >
       <Text style={[styles.icon, variant === 'danger' && styles.iconDanger]}>{icon}</Text>
     </Pressable>

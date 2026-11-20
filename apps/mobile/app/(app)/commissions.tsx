@@ -122,8 +122,15 @@ export default function CommissionsScreen() {
                 <Text style={styles.workerName}>{w.worker_name}</Text>
                 <Text style={styles.workerMeta}>
                   {w.commission_type === 'percentage'
-                    ? `${w.commission_value}% de lo recaudado`
-                    : `Monto fijo por servicio`}
+                    ? `${w.commission_value}% por defecto`
+                    : 'Monto fijo por defecto'}
+                  {w.overridden_service_count > 0
+                    ? `  ·  ${w.overridden_service_count} ${
+                        w.overridden_service_count === 1
+                          ? 'servicio con excepción'
+                          : 'servicios con excepción'
+                      }`
+                    : ''}
                   {'  ·  '}
                   {w.lines.length} {w.lines.length === 1 ? 'turno' : 'turnos'}
                 </Text>

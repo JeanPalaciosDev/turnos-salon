@@ -13,6 +13,7 @@ import { getService, getBusinessBaseCurrency } from '../../../../src/services/se
 import type { PaymentModel } from '../../../../src/database/models';
 import { useObservable } from '../../../../src/lib/useObservable';
 import { formatMoney } from '../../../../src/lib/money';
+import { formatIsoDateLong } from '../../../../src/lib/clock';
 import { AppScreen } from '../../../../src/components/AppScreen';
 import { Button, IconButton, ServiceTag } from '../../../../src/components/atoms';
 import { DetailRow, DetailStatusBanner, SectionHeading, type AppointmentStatus } from '../../../../src/components/detail';
@@ -116,7 +117,7 @@ export default function AppointmentDetailScreen() {
           clientName,
           workerName,
           serviceNames: serviceNames.length > 0 ? serviceNames : ['Sin servicios'],
-          dateTime: `${appt.date} · ${appt.startTime}`,
+          dateTime: `${formatIsoDateLong(appt.date)} · ${appt.startTime} – ${appt.endTime}`,
         });
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : 'No se pudo cargar el turno.');

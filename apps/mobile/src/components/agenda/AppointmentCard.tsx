@@ -13,6 +13,8 @@ export type AppointmentCardStatus =
 
 interface AppointmentCardProps {
   time: string;
+  /** Hora de fin; con ella la tarjeta muestra el rango (design.md §4). */
+  endTime?: string;
   clientName: string;
   serviceName: string;
   status: AppointmentCardStatus;
@@ -24,6 +26,22 @@ interface AppointmentCardProps {
 type StatusTokens = {
   border: string;
   bg: string;
+};
+
+/**
+ * Ícono por estado. design.md §2.4 lo exige: el estado nunca se comunica solo
+ * por color, para que sea legible con daltonismo. §4 lo ubica al inicio de la
+ * fila de la hora.
+ */
+const STATUS_ICON: Record<AppointmentCardStatus, string> = {
+  // Un glifo distinto por estado: ○ agendado y ● en curso se diferencian por el
+  // relleno, y ✓ queda para el turno ya terminado.
+  confirmed: '○',
+  pending: '⏱',
+  active: '●',
+  done: '✓',
+  cancelled: '✕',
+  noshow: '⃠',
 };
 
 function getStatusTokens(
@@ -48,6 +66,7 @@ function getStatusTokens(
 
 export function AppointmentCard({
   time,
+  endTime,
   clientName,
   serviceName,
   status,
@@ -68,8 +87,13 @@ export function AppointmentCard({
         status === 'cancelled' && styles.cancelled,
       ]}
     >
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <Text style={[styles.time, tabularNums as any]}>{time}</Text>
+      <View style={styles.timeRow}>
+        <Text style={styles.statusIcon}>{STATUS_ICON[status]}</Text>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <Text style={[styles.time, tabularNums as any]}>
+          {endTime ? `${time} – ${endTime}` : time}
+        </Text>
+      </View>
       <Text style={styles.clientName} numberOfLines={1}>
         {clientName}
       </Text>
@@ -116,6 +140,20 @@ const useStyles = createStyles((t) => ({
   },
   pressed: {
     opacity: 0.85,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.xs,
+  },
+  // El ícono va en textPrimary, no en el color del estado: ese color sobre el
+  // fondo tenue cae a 2,44:1 y el ícono es el único portador no cromático del
+  // estado en la tarjeta. Lo que distingue es la FORMA del glifo; el color del
+  // estado lo sostiene el borde lateral.
+  statusIcon: {
+    fontSize: t.typeScale.small.fontSize,
+    lineHeight: t.typeScale.small.lineHeight,
+    color: t.palette.textPrimary,
   },
   time: {
     fontSize: t.typeScale.small.fontSize,

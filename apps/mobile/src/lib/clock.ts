@@ -57,6 +57,19 @@ export function endOfMonthIso(timeZone?: string): string {
   return at(timeZone).endOf('month').toFormat('yyyy-LL-dd');
 }
 
+/**
+ * Formatea una fecha ISO "YYYY-MM-DD" en texto largo en español, p. ej.
+ * "Viernes 20 de noviembre". Evita mostrar la fecha cruda en pantalla, que
+ * choca con la voz cálida de design.md §8 y con el formato que ya usa la agenda.
+ * Si la cadena no es una fecha válida, la devuelve tal cual.
+ */
+export function formatIsoDateLong(iso: string): string {
+  const dt = DateTime.fromISO(iso).setLocale('es');
+  if (!dt.isValid) return iso;
+  const text = dt.toFormat("cccc d 'de' LLLL");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 /** Nombre del mes actual capitalizado en la zona del negocio (es), p. ej. "Noviembre". */
 export function monthLabel(timeZone?: string): string {
   const raw = at(timeZone).setLocale('es').toFormat('LLLL yyyy');

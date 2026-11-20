@@ -53,7 +53,10 @@ const useStyles = createStyles((t) => ({
   panel: {
     position: 'absolute',
     top: 26,
-    right: 0,
+    // Se abre hacia la derecha: el 🖌 que lo ancla mide 22px y vive en el borde
+    // izquierdo del header, así que con `right: 0` el panel de 184px quedaba
+    // fuera de la pantalla y sus opciones eran inalcanzables.
+    left: 0,
     backgroundColor: t.palette.bgSurface,
     borderWidth: 1,
     borderColor: t.palette.borderSubtle,

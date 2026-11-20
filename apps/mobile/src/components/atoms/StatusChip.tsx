@@ -30,8 +30,9 @@ type StatusColors = { border: string; bg: string };
 
 function getStatusColors(t: ResolvedTheme, status: AppointmentStatus): StatusColors {
   switch (status) {
+    // 'creado' usaba el mismo color que 'curso'; pasa al token confirmed.
     case 'creado':
-      return { border: t.palette.statusActiveBorder, bg: t.palette.statusActiveBg };
+      return { border: t.palette.statusConfirmedBorder, bg: t.palette.statusConfirmedBg };
     case 'pendiente':
       return { border: t.palette.statusPendingBorder, bg: t.palette.statusPendingBg };
     case 'curso':
@@ -59,7 +60,7 @@ export function StatusChip({ status, active = false }: StatusChipProps) {
       ]}
     >
       <View style={[styles.dot, { backgroundColor: border }]} />
-      <Text style={[styles.label, { color: border }]}>{STATUS_LABELS[status]}</Text>
+      <Text style={styles.label}>{STATUS_LABELS[status]}</Text>
     </View>
   );
 }
@@ -79,9 +80,14 @@ const useStyles = createStyles((t) => ({
     height: 6,
     borderRadius: 3,
   },
+  // La etiqueta usa textPrimary y no el color del estado: ese color sobre el
+  // fondo tenue del mismo estado daba hasta 2,44:1, muy por debajo del 4,5:1
+  // que pide design.md §2.4. La identidad del estado la sostiene el punto de
+  // color, que no transporta texto.
   label: {
     fontSize: t.typeScale.small.fontSize,
     lineHeight: t.typeScale.small.lineHeight,
     fontFamily: t.typeScale.small.fontFamily,
+    color: t.palette.textPrimary,
   },
 }));

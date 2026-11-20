@@ -33,5 +33,6 @@ export function AppScreen({
 
 const useStyles = createStyles((t) => ({
   safe: { flex: 1, backgroundColor: t.palette.bgBase },
-  body: { flex: 1 },
+  // zIndex explícito por debajo del header, para que sus popovers queden arriba.
+  body: { flex: 1, zIndex: 0 },
 }));

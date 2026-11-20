@@ -60,4 +60,9 @@ export const migrations: Migration[] = [
       },
     ],
   },
+  {
+    // v4 (2026-11): excepciones de comisión por servicio (SQL: migración 00016).
+    toVersion: 4,
+    steps: [{ type: 'create_table', name: 'worker_service_commissions' }],
+  },
 ];

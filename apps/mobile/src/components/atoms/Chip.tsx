@@ -33,6 +33,9 @@ const useStyles = createStyles((t) => ({
     paddingVertical: t.spacing.sm,
     borderWidth: 1,
     alignSelf: 'flex-start',
+    // Alto mínimo táctil sin cambiar la tipografía ni el relleno horizontal.
+    minHeight: 44,
+    justifyContent: 'center',
   },
   unselected: {
     backgroundColor: t.palette.bgSunken,

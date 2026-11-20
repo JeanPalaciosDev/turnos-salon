@@ -5,6 +5,10 @@
   "scripts": {
     "build": "echo 'Supabase functions are deployed via supabase CLI'",
     "dev": "supabase start",
+    "stop": "supabase stop",
+    "status": "supabase status",
+    "reset": "supabase db reset",
+    "functions": "supabase functions serve",
     "clean": "rimraf .temp .turbo"
   },
   "devDependencies": {
