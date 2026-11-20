@@ -5,7 +5,9 @@
   "main": "expo-router/entry",
   "scripts": {
     "dev": "expo start",
-    "build": "node scripts/validate-palettes.mjs && echo 'Mobile build handled by EAS'",
+    "build": "node scripts/validate-palettes.mjs && node scripts/audit-contrast.mjs && echo 'Mobile build handled by EAS'",
+    "audit:contrast": "node scripts/audit-contrast.mjs",
+    "review:mobile": "node scripts/review-mobile.mjs",
     "env:local": "node scripts/use-supabase-env.mjs local",
     "env:hosted": "node scripts/use-supabase-env.mjs hosted",
     "theme:extract": "node scripts/extract-palettes.mjs",

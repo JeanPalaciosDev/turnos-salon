@@ -11,7 +11,8 @@
     "dev": "turbo run dev",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "doctor": "node scripts/doctor.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",
