@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { Modal, Platform, Pressable } from 'react-native';
 
 import { createStyles, themedShadow } from '../../theme';
 
@@ -10,24 +10,30 @@ interface ModalPanelProps {
 }
 
 /**
- * Base de los modales-buscadores. NO usa el <Modal> de react-native porque estos
- * componentes se renderizan dentro de rutas de Expo Router ya presentadas con
- * `presentation: 'modal'` — envolverlas en otro <Modal> produce doble modal y,
- * en web, un conflicto de foco/aria-hidden que rompe la interacción. Acá es solo
- * un overlay + panel inferior (bottom sheet) con Views normales; el "modal" lo
- * da la ruta.
+ * Base de los modales-buscadores: overlay + panel inferior (bottom sheet).
+ * En nativo se monta en un <Modal> de react-native para cubrir toda la pantalla
+ * sin depender del contenedor padre; en web usa Views normales porque un <Modal>
+ * anidado en una ruta modal rompe el foco/aria-hidden.
  */
 export function ModalPanel({ visible, onClose, children }: ModalPanelProps) {
   const styles = useStyles();
 
   if (!visible) return null;
 
-  return (
+  const sheet = (
     <Pressable style={styles.overlay} onPress={onClose}>
       <Pressable style={styles.panel} onPress={(e) => e.stopPropagation()}>
         {children}
       </Pressable>
     </Pressable>
+  );
+
+  if (Platform.OS === 'web') return sheet;
+
+  return (
+    <Modal transparent animationType="fade" statusBarTranslucent visible onRequestClose={onClose}>
+      {sheet}
+    </Modal>
   );
 }
 

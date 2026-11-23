@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthProvider';
 import { NAV_ROUTES } from '../navigation/routes';
@@ -15,8 +16,18 @@ export function SideNav({ visible, onClose }: { visible: boolean; onClose: () =>
   const router = useRouter();
   const { signOut } = useAuth();
   const styles = useStyles();
+  const insets = useSafeAreaInsets();
 
   if (!visible) return null;
+
+  const wrap = (content: React.ReactElement) =>
+    Platform.OS === 'web' ? (
+      content
+    ) : (
+      <Modal transparent animationType="fade" statusBarTranslucent visible onRequestClose={onClose}>
+        {content}
+      </Modal>
+    );
 
   const go = (href: string) => {
     // Navegar ANTES de cerrar: onClose() desmonta el SideNav (visible=false → null)
@@ -32,9 +43,9 @@ export function SideNav({ visible, onClose }: { visible: boolean; onClose: () =>
     onClose();
   };
 
-  return (
+  return wrap(
     <Pressable style={styles.overlay} onPress={onClose}>
-      <Pressable style={styles.panel} onPress={(e) => e.stopPropagation()}>
+      <Pressable style={[styles.panel, { paddingTop: insets.top }]} onPress={(e) => e.stopPropagation()}>
         <View style={styles.header}>
           <Text style={styles.title}>Pantallas</Text>
           <Pressable onPress={onClose} hitSlop={8}>
@@ -50,7 +61,7 @@ export function SideNav({ visible, onClose }: { visible: boolean; onClose: () =>
           ))}
         </ScrollView>
       </Pressable>
-    </Pressable>
+    </Pressable>,
   );
 }
 

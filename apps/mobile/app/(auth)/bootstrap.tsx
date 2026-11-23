@@ -81,7 +81,7 @@ export default function BootstrapScreen() {
         <FormGroup>
           <FormLabel label="Moneda base" />
           <FormSelect
-            value={`${currency} — ${labelFor(CURRENCIES, currency)}`}
+            value={`${currency} — ${CURRENCIES.find((o) => o.value === currency)?.subtitle ?? currency}`}
             placeholder="Elegir moneda"
             onPress={() => setCurrencyOpen(true)}
           />

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COLOR_FAMILIES, createStyles, useTheme } from '../theme';
 
@@ -10,9 +11,10 @@ import { COLOR_FAMILIES, createStyles, useTheme } from '../theme';
 export function ThemePanel({ onClose }: { onClose?: () => void }) {
   const { mode, color, setMode, setColor } = useTheme();
   const styles = useStyles();
+  const insets = useSafeAreaInsets();
 
-  return (
-    <View style={styles.panel}>
+  const panel = (
+    <View style={[styles.panel, Platform.OS !== 'web' && { top: insets.top + 36, left: 20 }]}>
       <View style={styles.modes}>
         <Pressable
           style={[styles.mode, mode === 'light' && styles.modeActive]}
@@ -47,9 +49,19 @@ export function ThemePanel({ onClose }: { onClose?: () => void }) {
       </View>
     </View>
   );
+
+  if (Platform.OS === 'web') return panel;
+
+  return (
+    <Modal transparent animationType="fade" statusBarTranslucent visible onRequestClose={onClose}>
+      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Cerrar panel de tema" />
+      {panel}
+    </Modal>
+  );
 }
 
 const useStyles = createStyles((t) => ({
+  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   panel: {
     position: 'absolute',
     top: 26,

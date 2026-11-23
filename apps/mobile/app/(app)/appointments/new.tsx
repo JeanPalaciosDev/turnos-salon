@@ -53,9 +53,10 @@ export default function AppointmentNewScreen() {
         workerId: draft.workerId,
         clientId: draft.clientId ?? '',
       });
+      const createdDate = draft.date ?? '';
       await syncNow();
       resetAppointmentDraft();
-      router.replace('/(app)/agenda');
+      router.replace({ pathname: '/(app)/agenda', params: { date: createdDate } });
     } catch (e) {
       if (e instanceof AppointmentValidationError) setErrors(e.messages);
       else if (e instanceof AppointmentOverlapError) setErrors([e.message]);

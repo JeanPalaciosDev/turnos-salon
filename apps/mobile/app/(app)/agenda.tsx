@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import { useAuth } from '../../src/auth/AuthProvider';
 import { observeAppointmentsForDay } from '../../src/appointments/appointmentRepository';
@@ -65,8 +65,32 @@ function toCardStatus(status: string): AppointmentCardStatus {
 export default function AgendaScreen() {
   const { profile } = useAuth();
   const timeZone = useBusinessTimezone(profile);
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [selectedIndex, setSelectedIndex] = useState(() => weekdayIndex(timeZone));
+  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+  const target = useMemo(() => {
+    if (!dateParam || !/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) return undefined;
+    const [y, m, d] = dateParam.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }, [dateParam]);
+  const [weekOffset, setWeekOffset] = useState(() =>
+    target
+      ? Math.round(
+          (startOfWeek(target).getTime() - startOfWeek(new Date()).getTime()) / (7 * 86400000),
+        )
+      : 0,
+  );
+  const [selectedIndex, setSelectedIndex] = useState(() =>
+    target ? target.getDay() : weekdayIndex(timeZone),
+  );
+
+  useEffect(() => {
+    if (!target) return;
+    setWeekOffset(
+      Math.round(
+        (startOfWeek(target).getTime() - startOfWeek(new Date()).getTime()) / (7 * 86400000),
+      ),
+    );
+    setSelectedIndex(target.getDay());
+  }, [target]);
   const styles = useStyles();
 
   const weekStart = useMemo(() => {
