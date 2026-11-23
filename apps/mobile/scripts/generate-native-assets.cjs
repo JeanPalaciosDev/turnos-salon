@@ -260,4 +260,13 @@ function generateAssets() {
   console.log('Generated icon.png, adaptive-icon.png, and splash-icon.png (1024x1024 PNG).');
 }
 
+if (!process.argv.includes('--force')) {
+  console.error(
+    'Este script genera iconos provisionales y sobrescribe assets/icon.png, ' +
+      'assets/adaptive-icon.png y assets/splash-icon.png (los definitivos de la marca).\n' +
+      'No se escribió ningún archivo. Para ejecutarlo de todos modos: npm run assets:generate -- --force',
+  );
+  process.exit(1);
+}
+
 generateAssets();
