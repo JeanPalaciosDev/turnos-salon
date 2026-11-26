@@ -22,6 +22,7 @@ import {
 } from '../lib/supabase';
 import {
   bootstrapOwnerBusiness,
+  clearCachedProfile,
   fetchOwnProfile,
   type OwnerBootstrapInput,
 } from './profile';
@@ -293,16 +294,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const signOut = useCallback(async (): Promise<void> => {
+    const userId = authState.session?.user.id;
     const { error } = await getSupabaseClient().auth.signOut();
 
     if (error) {
       throw new Error(error.message);
     }
 
+    if (userId) {
+      await clearCachedProfile(userId);
+    }
+
     await clearLocalDatabaseForSignOut();
     setSyncStatus('idle');
     setSyncErrorMessage(null);
-  }, []);
+  }, [authState.session]);
 
   const completeOwnerBootstrap = useCallback(
     async (input: OwnerBootstrapInput): Promise<void> => {

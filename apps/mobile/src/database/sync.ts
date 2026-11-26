@@ -59,18 +59,31 @@ function parseChanges(value: unknown): SyncChanges {
   return value as SyncChanges;
 }
 
+const SYNC_REQUEST_TIMEOUT_MS = 15000;
+
 async function postJson<T>(
   configuration: SyncConfiguration,
   payload: Record<string, unknown>
 ): Promise<T> {
-  const response = await fetch(configuration.endpoint, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${configuration.accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SYNC_REQUEST_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(configuration.endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${configuration.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch {
+    throw new Error('Sin conexión con el servidor. Los cambios se enviarán cuando haya red.');
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!response.ok) {
     const message = await response.text();

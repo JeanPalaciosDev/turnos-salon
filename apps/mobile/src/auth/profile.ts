@@ -1,5 +1,6 @@
 import type { UserProfile, UserRole } from '@turnos/core';
 
+import { secureStore } from '../lib/secureStore';
 import { getSupabaseClient } from '../lib/supabase';
 import { generateUuidV7 } from './uuid';
 
@@ -43,18 +44,79 @@ function toUserProfile(row: ProfileRow): UserProfile {
   };
 }
 
+const PROFILE_FETCH_TIMEOUT_MS = 6000;
+
+const profileCacheKey = (userId: string) => `turnos.profile.${userId}`;
+
+async function readCachedProfile(userId: string): Promise<UserProfile | null> {
+  try {
+    const raw = await secureStore.getItem(profileCacheKey(userId));
+    if (!raw) return null;
+    const row = JSON.parse(raw) as ProfileRow;
+    return row.id === userId ? toUserProfile(row) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeCachedProfile(userId: string, profile: UserProfile | null): Promise<void> {
+  try {
+    if (profile) {
+      await secureStore.setItem(profileCacheKey(userId), JSON.stringify(profile));
+    } else {
+      await secureStore.removeItem(profileCacheKey(userId));
+    }
+  } catch {
+    // El caché es una optimización offline; un fallo no debe bloquear la sesión.
+  }
+}
+
+/** Borra el perfil cacheado de la cuenta (al cerrar sesión). */
+export async function clearCachedProfile(userId: string): Promise<void> {
+  await writeCachedProfile(userId, null);
+}
+
+/**
+ * Carga el perfil del usuario. Sin conexión (o si el servidor no responde en
+ * unos segundos) usa el último perfil guardado en el dispositivo, para que la
+ * app abra offline. Los errores del servidor (permisos, etc.) sí se propagan.
+ */
 export async function fetchOwnProfile(userId: string): Promise<UserProfile | null> {
-  const { data, error } = await getSupabaseClient()
+  const query = getSupabaseClient()
     .from('user_profiles')
     .select('id, business_id, role, worker_id, email, updated_at, sync_version')
     .eq('id', userId)
     .maybeSingle();
 
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<'timeout'>((resolve) => {
+    timer = setTimeout(() => resolve('timeout'), PROFILE_FETCH_TIMEOUT_MS);
+  });
+
+  let result: Awaited<typeof query> | 'timeout';
+  try {
+    result = await Promise.race([query, timeout]);
+  } catch {
+    result = 'timeout';
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+
+  if (result === 'timeout' || (!!result.error && !(result.error as { code?: string }).code)) {
+    const cached = await readCachedProfile(userId);
+    if (cached) return cached;
+    throw new Error('Sin conexión y sin datos guardados. Conéctate a internet para iniciar.');
+  }
+
+  const { data, error } = result as Exclude<typeof result, 'timeout'>;
+
   if (error) {
     throw new Error(`No se pudo cargar el perfil: ${error.message}`);
   }
 
-  return data ? toUserProfile(data as ProfileRow) : null;
+  const profile = data ? toUserProfile(data as ProfileRow) : null;
+  await writeCachedProfile(userId, profile);
+  return profile;
 }
 
 function normalizeBusinessName(value: string): string {
