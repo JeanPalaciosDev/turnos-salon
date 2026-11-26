@@ -1,6 +1,8 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
+import { useAuth } from '../../auth/AuthProvider';
+import { goHome } from '../../navigation/navigate';
 import { createStyles } from '../../theme';
 import { BackArrow } from '../atoms';
 
@@ -11,6 +13,7 @@ interface FormHeaderRowProps {
 
 export function FormHeaderRow({ title, onBack }: FormHeaderRowProps) {
   const styles = useStyles();
+  const { status, profile } = useAuth();
 
   return (
     <View style={styles.row}>
@@ -22,7 +25,19 @@ export function FormHeaderRow({ title, onBack }: FormHeaderRowProps) {
       <Text style={styles.title} numberOfLines={1}>
         {title}
       </Text>
-      {onBack ? <View style={styles.spacer} /> : <View style={styles.spacer} />}
+      {onBack && status === 'ready' ? (
+        <Pressable
+          style={styles.home}
+          onPress={() => goHome(profile?.role)}
+          accessibilityLabel="Ir a la pantalla principal"
+          accessibilityRole="button"
+          hitSlop={8}
+        >
+          <Text style={styles.homeIcon}>🏠</Text>
+        </Pressable>
+      ) : (
+        <View style={styles.spacer} />
+      )}
     </View>
   );
 }
@@ -31,7 +46,7 @@ const useStyles = createStyles((t) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
+    height: 60,
     paddingHorizontal: t.spacing.xl,
   },
   title: {
@@ -43,6 +58,17 @@ const useStyles = createStyles((t) => ({
     color: t.palette.textPrimary,
   },
   spacer: {
-    width: 36,
+    width: 44,
   },
+  home: {
+    width: 44,
+    height: 44,
+    borderRadius: t.radius.control,
+    backgroundColor: t.palette.bgSunken,
+    borderWidth: 1,
+    borderColor: t.palette.borderSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  homeIcon: { fontSize: 22 },
 }));

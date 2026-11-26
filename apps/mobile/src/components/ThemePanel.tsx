@@ -14,7 +14,7 @@ export function ThemePanel({ onClose }: { onClose?: () => void }) {
   const insets = useSafeAreaInsets();
 
   const panel = (
-    <View style={[styles.panel, Platform.OS !== 'web' && { top: insets.top + 36, left: 20 }]}>
+    <View style={[styles.panel, Platform.OS !== 'web' && { top: insets.top + 64, left: 20 }]}>
       <View style={styles.modes}>
         <Pressable
           style={[styles.mode, mode === 'light' && styles.modeActive]}
@@ -64,7 +64,7 @@ const useStyles = createStyles((t) => ({
   backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   panel: {
     position: 'absolute',
-    top: 26,
+    top: 50,
     // Se abre hacia la derecha: el 🖌 que lo ancla mide 22px y vive en el borde
     // izquierdo del header, así que con `right: 0` el panel de 184px quedaba
     // fuera de la pantalla y sus opciones eran inalcanzables.

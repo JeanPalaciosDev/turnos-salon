@@ -4,6 +4,7 @@ import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../auth/AuthProvider';
+import { goToSection } from '../navigation/navigate';
 import { NAV_ROUTES } from '../navigation/routes';
 import { createStyles, useTheme } from '../theme';
 
@@ -14,7 +15,7 @@ import { createStyles, useTheme } from '../theme';
  */
 export function SideNav({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
 
@@ -39,7 +40,7 @@ export function SideNav({ visible, onClose }: { visible: boolean; onClose: () =>
       onClose();
       return;
     }
-    router.push(href as never);
+    goToSection(href, profile?.role);
     onClose();
   };
 
@@ -100,20 +101,31 @@ const useStyles = createStyles((t) => ({
     fontSize: 17,
     color: t.palette.textPrimary,
   },
-  close: { fontSize: 18, color: t.palette.textMuted, paddingHorizontal: 6, paddingVertical: 2 },
+  close: {
+    fontSize: 26,
+    lineHeight: 30,
+    color: t.palette.textPrimary,
+    width: 44,
+    height: 44,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    borderRadius: t.radius.control,
+    backgroundColor: t.palette.bgSunken,
+    overflow: 'hidden',
+  },
   list: { paddingHorizontal: 10, paddingTop: 4, paddingBottom: 18, gap: 2 },
   link: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 10,
+    paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: t.radius.control,
   },
-  linkIcon: { fontSize: 15, width: 18, textAlign: 'center' },
+  linkIcon: { fontSize: 20, width: 26, textAlign: 'center' },
   linkLabel: {
-    fontSize: 13,
-    fontFamily: t.typeScale.small.fontFamily,
+    fontSize: 16,
+    fontFamily: t.typeScale.body.fontFamily,
     color: t.palette.textPrimary,
   },
 }));

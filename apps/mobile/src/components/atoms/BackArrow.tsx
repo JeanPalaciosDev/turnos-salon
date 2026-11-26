@@ -26,17 +26,20 @@ export function BackArrow({ onPress }: BackArrowProps) {
 
 const useStyles = createStyles((t) => ({
   base: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: t.radius.control,
+    backgroundColor: t.palette.bgSunken,
+    borderWidth: 1,
+    borderColor: t.palette.borderSubtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pressed: {
-    backgroundColor: t.palette.bgSunken,
+    backgroundColor: t.palette.borderSubtle,
   },
   arrow: {
-    fontSize: 20,
+    fontSize: 24,
     color: t.palette.textPrimary,
     lineHeight: 24,
   },

@@ -246,6 +246,27 @@ export function observeAppointmentsForDay(profile: UserProfile, date: string) {
   return getAppointmentsCollection().query(...clauses).observe();
 }
 
+/**
+ * Observa los turnos pendientes de atender (creados, pendientes o en curso) desde
+ * una fecha en adelante, ordenados cronológicamente. Un worker solo ve los suyos.
+ */
+export function observeUpcomingAppointments(profile: UserProfile, fromDate: string) {
+  const clauses = [
+    Q.where('business_id', profile.business_id),
+    Q.where('date', Q.gte(fromDate)),
+    Q.where('is_deleted', false),
+    Q.where('status', Q.oneOf(['created', 'pending', 'in_progress'])),
+    Q.sortBy('date', Q.asc),
+    Q.sortBy('start_time', Q.asc),
+  ];
+
+  if (profile.role === 'worker' && profile.worker_id) {
+    clauses.splice(3, 0, Q.where('worker_id', profile.worker_id));
+  }
+
+  return getAppointmentsCollection().query(...clauses).observe();
+}
+
 export async function getAppointment(
   profile: UserProfile,
   appointmentId: string

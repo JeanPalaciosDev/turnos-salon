@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import { useAuth } from '../../../../src/auth/AuthProvider';
+import { returnTo } from '../../../../src/navigation/navigate';
 import { setWorkerActive } from '../../../../src/workers/workerRepository';
 import { ConfirmModal } from '../../../../src/components/modals';
 
@@ -18,7 +19,7 @@ export default function WorkerDeleteModal() {
       await setWorkerActive(profile, id, false);
       await syncNow();
     } finally {
-      router.replace('/(app)/workers');
+      returnTo('/(app)/workers');
     }
   };
 

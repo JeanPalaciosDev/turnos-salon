@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import { useAuth } from '../../../../src/auth/AuthProvider';
+import { returnTo } from '../../../../src/navigation/navigate';
 import { deleteClient } from '../../../../src/clients/clientRepository';
 import { ConfirmModal } from '../../../../src/components/modals';
 
@@ -21,7 +22,7 @@ export default function ClientDeleteModal() {
       await deleteClient(profile, id);
       await syncNow();
     } finally {
-      router.replace('/(app)/clients');
+      returnTo('/(app)/clients');
     }
   };
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import { useAuth } from '../../../../src/auth/AuthProvider';
+import { returnTo } from '../../../../src/navigation/navigate';
 import { cancelAppointment } from '../../../../src/appointments/appointmentRepository';
 import { ConfirmModal } from '../../../../src/components/modals';
 
@@ -18,7 +19,7 @@ export default function AppointmentDeleteModal() {
       await cancelAppointment(profile, id);
       await syncNow();
     } finally {
-      router.replace('/(app)/agenda');
+      returnTo('/(app)/agenda');
     }
   };
 

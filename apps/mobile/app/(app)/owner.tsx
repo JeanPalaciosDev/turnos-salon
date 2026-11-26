@@ -4,10 +4,13 @@ import { router } from 'expo-router';
 import { DateTime } from 'luxon';
 
 import { useAuth } from '../../src/auth/AuthProvider';
-import { observeAppointmentsForDay } from '../../src/appointments/appointmentRepository';
+import {
+  observeAppointmentsForDay,
+  observeUpcomingAppointments,
+} from '../../src/appointments/appointmentRepository';
 import type { AppointmentModel } from '../../src/database/models';
 import { useObservable } from '../../src/lib/useObservable';
-import { useBusinessTimezone, useCommissionsEnabled } from '../../src/lib/businessConfig';
+import { useBusinessName, useBusinessTimezone, useCommissionsEnabled } from '../../src/lib/businessConfig';
 import { nowHm, todayIso as todayIsoInZone } from '../../src/lib/clock';
 import { AppScreen } from '../../src/components/AppScreen';
 import { HomeHeader, SectionHeading } from '../../src/components/detail';
@@ -21,16 +24,18 @@ function formatTodayDate(timeZone?: string): string {
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
-function greetingName(email: string): string {
-  const local = email.split('@')[0];
-  return local.charAt(0).toUpperCase() + local.slice(1);
-}
-
-function nextTurnTime(appointments: AppointmentModel[], nowHM: string): string {
-  const future = appointments
-    .filter(a => a.status !== 'cancelled' && a.startTime > nowHM)
-    .sort((a, b) => a.startTime.localeCompare(b.startTime));
-  return future.length > 0 ? future[0].startTime : '—';
+/**
+ * Próximo turno pendiente desde ahora: "15:30" si es hoy, "Vie 27 · 10:00" otro día.
+ * Los turnos llegan ordenados por fecha y hora.
+ */
+function nextTurnLabel(upcoming: AppointmentModel[], today: string, nowHM: string): string {
+  const next = upcoming.find(
+    (a) => a.date > today || (a.date === today && a.startTime > nowHM),
+  );
+  if (!next) return '—';
+  if (next.date === today) return next.startTime;
+  const day = DateTime.fromISO(next.date).setLocale('es').toFormat('ccc d');
+  return `${day.charAt(0).toUpperCase()}${day.slice(1)} · ${next.startTime}`;
 }
 
 type QuickLink = { label: string; icon: string; href: string };
@@ -63,9 +68,15 @@ export default function OwnerHomeScreen() {
     [] as AppointmentModel[],
   );
 
+  const upcoming = useObservable(
+    () => (profile ? observeUpcomingAppointments(profile, today) : undefined),
+    [profile?.id, today],
+    [] as AppointmentModel[],
+  );
+
   const active = appointments.filter(a => a.status !== 'cancelled');
-  const name = profile ? greetingName(profile.email) : '';
-  const greet = name ? 'Hola, ' + name : 'Hola';
+  const businessName = useBusinessName(profile);
+  const greet = businessName ? 'Hola, ' + businessName : 'Hola';
 
   return (
     <AppScreen>
@@ -83,7 +94,7 @@ export default function OwnerHomeScreen() {
           <View style={styles.statCol}>
             <StatCard
               label="Próximo turno"
-              value={nextTurnTime(appointments, nowHm(timeZone))}
+              value={nextTurnLabel(upcoming, today, nowHm(timeZone))}
               onPress={() => router.push('/(app)/agenda')}
             />
           </View>

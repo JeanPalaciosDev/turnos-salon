@@ -73,6 +73,43 @@ export function useBusinessTimezone(profile: UserProfile | null): string | undef
   return timezone;
 }
 
+/** Observa de forma reactiva el nombre del salón (business_config.name). */
+export function useBusinessName(profile: UserProfile | null): string | undefined {
+  const [name, setName] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!profile) {
+      setName(undefined);
+      return;
+    }
+
+    let active = true;
+    const subscription = database
+      .get<BusinessConfigModel>(TABLES.BUSINESS_CONFIG)
+      .findAndObserve(profile.business_id)
+      .subscribe({
+        next: (record) => {
+          const value = record ? record._getRaw('name') : undefined;
+          if (active) {
+            setName(typeof value === 'string' && value.trim() ? value.trim() : undefined);
+          }
+        },
+        error: () => {
+          if (active) {
+            setName(undefined);
+          }
+        },
+      });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [profile?.business_id, profile]);
+
+  return name;
+}
+
 /**
  * Observa de forma reactiva si el negocio usa el sistema de comisiones
  * (business_config.commissions_enabled). Emite false hasta que el primer pull

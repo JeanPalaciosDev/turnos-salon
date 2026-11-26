@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { usePathname } from 'expo-router';
+
+import { useAuth } from '../auth/AuthProvider';
+import { goHome } from '../navigation/navigate';
 import { createStyles } from '../theme';
 import { SideNav } from './SideNav';
 import { ThemePanel } from './ThemePanel';
@@ -14,22 +18,38 @@ export function AppHeader() {
   const [themeOpen, setThemeOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const styles = useStyles();
+  const { profile } = useAuth();
+  const pathname = usePathname();
+  const isHome = pathname === '/owner' || pathname === '/worker';
 
   return (
     <View style={styles.bar}>
-      <View style={styles.themeWrap}>
-        <Pressable
-          style={styles.iconBtn}
-          onPress={() => setThemeOpen((v) => !v)}
-          accessibilityLabel="Tema"
-          accessibilityRole="button"
-          // El botón se dibuja de 22px para no romper el diseño del header, pero
-          // el área pulsable llega a 44px, que es el mínimo recomendado.
-          hitSlop={11}
-        >
-          <Text style={styles.brush}>🖌</Text>
-        </Pressable>
-        {themeOpen && <ThemePanel onClose={() => setThemeOpen(false)} />}
+      <View style={styles.leftGroup}>
+        <View style={styles.themeWrap}>
+          <Pressable
+            style={styles.iconBtn}
+            onPress={() => setThemeOpen((v) => !v)}
+            accessibilityLabel="Tema"
+            accessibilityRole="button"
+            // El botón se dibuja de 22px para no romper el diseño del header, pero
+            // el área pulsable llega a 44px, que es el mínimo recomendado.
+            hitSlop={6}
+          >
+            <Text style={styles.brush}>🖌</Text>
+          </Pressable>
+          {themeOpen && <ThemePanel onClose={() => setThemeOpen(false)} />}
+        </View>
+        {!isHome && (
+          <Pressable
+            style={styles.iconBtn}
+            onPress={() => goHome(profile?.role)}
+            accessibilityLabel="Ir a la pantalla principal"
+            accessibilityRole="button"
+            hitSlop={6}
+          >
+            <Text style={styles.brush}>🏠</Text>
+          </Pressable>
+        )}
       </View>
 
       <Pressable
@@ -37,7 +57,7 @@ export function AppHeader() {
         onPress={() => setNavOpen(true)}
         accessibilityLabel="Menú de navegación"
         accessibilityRole="button"
-        hitSlop={14}
+        hitSlop={6}
       >
         <Text style={styles.dots}>●●●</Text>
       </Pressable>
@@ -49,7 +69,7 @@ export function AppHeader() {
 
 const useStyles = createStyles((t) => ({
   bar: {
-    height: 44,
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -59,16 +79,28 @@ const useStyles = createStyles((t) => ({
     // del panel de tema y le robaba los clics.
     zIndex: 20,
   },
+  leftGroup: { flexDirection: 'row', alignItems: 'center', gap: t.spacing.md },
   themeWrap: { position: 'relative' },
   iconBtn: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 44,
+    height: 44,
+    borderRadius: t.radius.control,
+    borderWidth: 1,
+    borderColor: t.palette.borderSubtle,
     backgroundColor: t.palette.bgSunken,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brush: { fontSize: 12 },
-  navBtn: { paddingHorizontal: 6, paddingVertical: 4 },
-  dots: { fontSize: 12, color: t.palette.textPrimary, letterSpacing: 1 },
+  brush: { fontSize: 22 },
+  navBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: t.radius.control,
+    borderWidth: 1,
+    borderColor: t.palette.borderSubtle,
+    backgroundColor: t.palette.bgSunken,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dots: { fontSize: 16, color: t.palette.textPrimary, letterSpacing: 2 },
 }));

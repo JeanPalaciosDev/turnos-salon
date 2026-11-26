@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import { useAuth } from '../../../../src/auth/AuthProvider';
+import { returnTo } from '../../../../src/navigation/navigate';
 import { setServiceActive } from '../../../../src/services/serviceRepository';
 import { ConfirmModal } from '../../../../src/components/modals';
 
@@ -21,7 +22,7 @@ export default function ServiceDeleteModal() {
       await setServiceActive(profile, id, false);
       await syncNow();
     } finally {
-      router.replace('/(app)/services');
+      returnTo('/(app)/services');
     }
   };
 

@@ -12,6 +12,7 @@ import {
   resetAppointmentDraft,
   useAppointmentDraft,
 } from '../../../src/appointments/appointmentDraft';
+import { returnTo } from '../../../src/navigation/navigate';
 import { AppScreen } from '../../../src/components/AppScreen';
 import { Button } from '../../../src/components/atoms';
 import {
@@ -56,7 +57,7 @@ export default function AppointmentNewScreen() {
       const createdDate = draft.date ?? '';
       await syncNow();
       resetAppointmentDraft();
-      router.replace({ pathname: '/(app)/agenda', params: { date: createdDate } });
+      returnTo('/(app)/agenda', { date: createdDate });
     } catch (e) {
       if (e instanceof AppointmentValidationError) setErrors(e.messages);
       else if (e instanceof AppointmentOverlapError) setErrors([e.message]);
